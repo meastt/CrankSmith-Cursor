@@ -1,0 +1,244 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Core component data
+model Component {
+  id              String   @id @default(cuid())
+  manufacturer    String
+  model           String
+  year            Int?
+  weightGrams     Int?
+  msrp            Float?
+  verifiedWeight  Boolean  @default(false)
+  imageUrl        String?
+  category        ComponentCategory
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Specific component data
+  cassette        Cassette?
+  chainring       Chainring?
+  chain           Chain?
+  hub             Hub?
+  derailleur      Derailleur?
+  tire            Tire?
+  wheel           Wheel?
+
+  // Compatibility relationships
+  compatibilityFrom CompatibilityRule[] @relation("ComponentFrom")
+  compatibilityTo   CompatibilityRule[] @relation("ComponentTo")
+
+  @@unique([manufacturer, model, year])
+  @@index([category])
+  @@index([manufacturer])
+}
+
+enum ComponentCategory {
+  CASSETTE
+  CHAINRING
+  CHAIN
+  HUB
+  DERAILLEUR
+  TIRE
+  WHEEL
+  CRANK
+  BOTTOM_BRACKET
+  SHIFTER
+  BRAKE
+  FORK
+  SHOCK
+  FRAME
+}
+
+// Cassette specific data
+model Cassette {
+  id            String   @id @default(cuid())
+  componentId   String   @unique
+  component     Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  speeds        Int
+  cogs          Int[]    // Array of tooth counts
+  freehubType   FreehubType
+  spacing       Float?   // mm between cogs
+  material      String?
+  maxTorque     Int?     // Nm
+  weightGrams   Int?
+}
+
+enum FreehubType {
+  SHIMANO_HG
+  SRAM_XD
+  SRAM_XDR
+  CAMPAGNOLO_N3W
+  MICRO_SPLINE
+  DTSWISS_350
+  DTSWISS_240
+}
+
+// Chainring specific data
+model Chainring {
+  id            String   @id @default(cuid())
+  componentId   String   @unique
+  component     Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  teeth         Int
+  bcd           Float?   // Bolt circle diameter
+  offset        Float?   // mm
+  material      String?
+  weightGrams   Int?
+}
+
+// Chain specific data
+model Chain {
+  id            String   @id @default(cuid())
+  componentId   String   @unique
+  component     Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  speeds        Int
+  material      String?
+  weightGrams   Int?
+  links         Int?
+}
+
+// Hub specific data
+model Hub {
+  id            String   @id @default(cuid())
+  componentId   String   @unique
+  component     Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  frontSpacing  Float?   // mm
+  rearSpacing   Float?   // mm
+  freehubTypes  FreehubType[]
+  axleType      AxleType?
+  bearingType   String?
+  weightGrams   Int?
+}
+
+enum AxleType {
+  QR_FRONT
+  QR_REAR
+  THRU_AXLE_12_FRONT
+  THRU_AXLE_12_REAR
+  THRU_AXLE_15_FRONT
+  THRU_AXLE_15_REAR
+  BOOST_FRONT
+  BOOST_REAR
+}
+
+// Derailleur specific data
+model Derailleur {
+  id            String   @id @default(cuid())
+  componentId   String   @unique
+  component     Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  speeds        Int
+  maxCapacity   Int?     // teeth
+  cageLength    CageLength?
+  weightGrams   Int?
+}
+
+enum CageLength {
+  SHORT
+  MEDIUM
+  LONG
+}
+
+// Tire specific data
+model Tire {
+  id            String   @id @default(cuid())
+  componentId   String   @unique
+  component     Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  width         Float    // inches
+  diameter      Float    // inches (26, 27.5, 29, etc.)
+  compound      String?
+  casing        String?
+  weightGrams   Int?
+  tpi           Int?     // threads per inch
+}
+
+// Wheel specific data
+model Wheel {
+  id            String   @id @default(cuid())
+  componentId   String   @unique
+  component     Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  diameter      Float    // inches
+  width         Float?   // mm
+  material      String?
+  weightGrams   Int?
+  spokeCount    Int?
+}
+
+// Compatibility rules - the magic sauce
+model CompatibilityRule {
+  id              String   @id @default(cuid())
+  componentFromId String
+  componentFrom   Component @relation("ComponentFrom", fields: [componentFromId], references: [id], onDelete: Cascade)
+  componentToId   String
+  componentTo     Component @relation("ComponentTo", fields: [componentToId], references: [id], onDelete: Cascade)
+  compatible      Boolean
+  warnings        String[] // Array of warning messages
+  requiredParts   String[] // Array of required additional parts
+  verified        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([componentFromId, componentToId])
+  @@index([compatible])
+}
+
+// User accounts for Pro subscriptions
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  isPro     Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  savedBuilds SavedBuild[]
+}
+
+// User saved builds
+model SavedBuild {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  components  Json     // Array of component IDs and their configuration
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// Pro bike database
+model ProBike {
+  id          String   @id @default(cuid())
+  riderName   String
+  team        String?
+  year        Int
+  bikeModel   String
+  components  Json     // Array of component IDs and their configuration
+  imageUrl    String?
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([riderName])
+  @@index([year])
+}
+
+// Shop licenses
+model Shop {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+} 
