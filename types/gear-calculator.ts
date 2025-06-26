@@ -1,3 +1,5 @@
+// types/gear-calculator.ts - Fixed version
+
 export interface GearRatio {
   chainring: number;
   cog: number;
@@ -85,27 +87,38 @@ export interface WeightComparison {
   costPerGram?: number; // $/gram saved
 }
 
+// Fixed CompatibilityStatus interface to match usage
 export interface CompatibilityStatus {
   status: 'compatible' | 'warning' | 'incompatible';
   issues: CompatibilityIssue[];
   solutions: CompatibilitySolution[];
   confidence: number; // 0-100
+  // Added properties that are being used in components
+  isCompatible: boolean;
+  overallStatus: 'compatible' | 'warning' | 'incompatible';
 }
 
+// Fixed CompatibilityIssue interface to match usage
 export interface CompatibilityIssue {
   type: 'freehub' | 'chain' | 'capacity' | 'chainline' | 'clearance' | 'other';
   severity: 'low' | 'medium' | 'high' | 'critical';
   message: string;
   components: string[];
   costToFix?: number;
+  // Added property that is being used
+  estimatedCost: number;
 }
 
+// Fixed CompatibilitySolution interface to match usage
 export interface CompatibilitySolution {
   type: 'replace' | 'upgrade' | 'adapter' | 'modification';
   description: string;
   cost: number;
   effort: 'easy' | 'medium' | 'hard';
   reliability: number; // 0-100
+  // Added properties that are being used
+  message: string;
+  difficulty: 'easy' | 'medium' | 'hard';
 }
 
 export interface CostAnalysis {
@@ -200,6 +213,8 @@ export interface TireData {
 export interface DerailleurData {
   speeds: number;
   maxCapacity?: number;
+  maxCog?: number; // Added this property that's being used
+  capacity?: number; // Added this property that's being used
   cageLength?: 'SHORT' | 'MEDIUM' | 'LONG';
 }
 
@@ -271,4 +286,4 @@ export interface ChainlineResult {
   deviation: number; // mm
   efficiency: number; // percentage
   recommendations: string[];
-} 
+}

@@ -1,70 +1,75 @@
 'use client'
 
 import { useState } from 'react'
-import { Component, CompatibilityStatus, CompatibilityIssue } from '@/types/gear-calculator'
-import { CheckCircle, XCircle, AlertTriangle, Info, Zap, Shield, TrendingUp, ArrowRight } from 'lucide-react'
+import { 
+  CheckCircle, 
+  XCircle, 
+  AlertTriangle, 
+  Info, 
+  Shield, 
+  Zap, 
+  TrendingUp 
+} from 'lucide-react'
+import { Component, ComponentCategory, CompatibilityStatus, CompatibilityIssue, CompatibilitySolution } from '@/types/gear-calculator'
 
-// Sample components for demo
+// Sample components with proper typing
 const sampleComponents: Component[] = [
-  // Cassettes
   {
     id: 'cassette-1',
-    manufacturer: 'Shimano',
-    model: 'XT M8100',
-    year: 2021,
-    weightGrams: 420,
-    msrp: 89.99,
-    category: 'CASSETTE',
+    manufacturer: 'SRAM',
+    model: 'PG-1230 Eagle',
+    year: 2023,
+    weightGrams: 350,
+    msrp: 159.99,
+    category: 'CASSETTE' as ComponentCategory,
     cassette: {
       speeds: 12,
-      cogs: [10, 12, 14, 16, 18, 21, 24, 28, 32, 36, 40, 45],
-      freehubType: 'SHIMANO_HG'
+      cogs: [10, 12, 14, 16, 18, 21, 24, 28, 32, 36, 42, 50],
+      freehubType: 'SRAM_XD'
     }
   },
   {
     id: 'cassette-2',
-    manufacturer: 'SRAM',
-    model: 'GX Eagle',
+    manufacturer: 'Shimano',
+    model: 'CS-M7100 SLX',
     year: 2022,
-    weightGrams: 390,
-    msrp: 95.00,
-    category: 'CASSETTE',
+    weightGrams: 470,
+    msrp: 89.99,
+    category: 'CASSETTE' as ComponentCategory,
     cassette: {
       speeds: 12,
-      cogs: [10, 12, 14, 16, 18, 21, 24, 28, 32, 36, 42, 52],
-      freehubType: 'SRAM_XD'
+      cogs: [10, 12, 14, 16, 18, 21, 24, 28, 33, 39, 45, 51],
+      freehubType: 'MICRO_SPLINE'
     }
   },
-  // Hubs
   {
     id: 'hub-1',
-    manufacturer: 'Shimano',
-    model: 'XT M8100',
-    year: 2021,
-    weightGrams: 380,
-    msrp: 129.99,
-    category: 'HUB',
+    manufacturer: 'DT Swiss',
+    model: '350',
+    year: 2023,
+    weightGrams: 280,
+    msrp: 189.99,
+    category: 'HUB' as ComponentCategory,
     hub: {
-      freehubTypes: ['SHIMANO_HG'],
-      axleType: 'THRU_AXLE',
-      axleWidth: 148
+      rearSpacing: 142,
+      freehubTypes: ['SHIMANO_HG', 'SRAM_XD', 'MICRO_SPLINE'],
+      axleType: 'THRU_AXLE_12_REAR'
     }
   },
   {
     id: 'hub-2',
-    manufacturer: 'DT Swiss',
-    model: '350',
+    manufacturer: 'Hope',
+    model: 'Pro 4',
     year: 2022,
-    weightGrams: 420,
-    msrp: 89.99,
-    category: 'HUB',
+    weightGrams: 320,
+    msrp: 249.99,
+    category: 'HUB' as ComponentCategory,
     hub: {
-      freehubTypes: ['SHIMANO_HG', 'SRAM_XD'],
-      axleType: 'THRU_AXLE',
-      axleWidth: 148
+      rearSpacing: 142,
+      freehubTypes: ['SHIMANO_HG'],
+      axleType: 'THRU_AXLE_12_REAR'
     }
   },
-  // Derailleurs
   {
     id: 'derailleur-1',
     manufacturer: 'Shimano',
@@ -72,7 +77,7 @@ const sampleComponents: Component[] = [
     year: 2021,
     weightGrams: 280,
     msrp: 89.99,
-    category: 'DERAILLEUR',
+    category: 'DERAILLEUR' as ComponentCategory,
     derailleur: {
       speeds: 12,
       maxCog: 45,
@@ -87,7 +92,7 @@ const sampleComponents: Component[] = [
     year: 2022,
     weightGrams: 290,
     msrp: 95.00,
-    category: 'DERAILLEUR',
+    category: 'DERAILLEUR' as ComponentCategory,
     derailleur: {
       speeds: 12,
       maxCog: 52,
@@ -124,68 +129,89 @@ function CompatibilityChecker({ components }: CompatibilityCheckerProps) {
 
     // Simple compatibility logic for demo
     const issues: CompatibilityIssue[] = []
-    const solutions: any[] = []
+    const solutions: CompatibilitySolution[] = []
 
     // Check cassette/hub compatibility
     const cassette = selectedComponents.find(c => c.category === 'CASSETTE')
     const hub = selectedComponents.find(c => c.category === 'HUB')
 
-    if (cassette && hub) {
-      const cassetteFreehub = cassette.cassette?.freehubType
-      const hubFreehubs = hub.hub?.freehubTypes
+    if (cassette && hub && cassette.cassette && hub.hub) {
+      const cassetteFreehub = cassette.cassette.freehubType
+      const hubFreehubs = hub.hub.freehubTypes
 
-      if (cassetteFreehub && hubFreehubs && !hubFreehubs.includes(cassetteFreehub)) {
+      if (!hubFreehubs.includes(cassetteFreehub)) {
         issues.push({
           type: 'freehub',
           severity: 'critical',
-          message: `Cassette requires ${cassetteFreehub} freehub, but hub only supports ${hubFreehubs.join(', ')}`,
-          components: ['cassette', 'hub'],
-          estimatedCost: 50
+          message: `Cassette requires ${cassetteFreehub} freehub but hub only supports ${hubFreehubs.join(', ')}`,
+          components: [cassette.model, hub.model],
+          costToFix: 60,
+          estimatedCost: 60
         })
 
         solutions.push({
-          type: 'freehub_adapter',
-          message: 'Use a freehub adapter or replace hub',
-          cost: 50,
+          type: 'upgrade',
+          description: `Convert hub to ${cassetteFreehub} freehub`,
+          cost: 60,
+          effort: 'medium',
+          reliability: 95,
+          message: `Install ${cassetteFreehub} freehub body on ${hub.model} hub`,
           difficulty: 'medium'
         })
       }
     }
 
-    // Check derailleur/cassette compatibility
+    // Check derailleur capacity
     const derailleur = selectedComponents.find(c => c.category === 'DERAILLEUR')
+    
+    if (cassette && derailleur && cassette.cassette && derailleur.derailleur) {
+      const largestCog = Math.max(...cassette.cassette.cogs)
+      const derailleurMaxCog = derailleur.derailleur.maxCog || 50
 
-    if (derailleur && cassette) {
-      const derailleurMaxCog = derailleur.derailleur?.maxCog
-      const cassetteMaxCog = Math.max(...(cassette.cassette?.cogs || []))
-
-      if (derailleurMaxCog && cassetteMaxCog > derailleurMaxCog) {
+      if (largestCog > derailleurMaxCog) {
         issues.push({
-          type: 'derailleur_capacity',
-          severity: 'warning',
-          message: `Derailleur max cog is ${derailleurMaxCog}T, but cassette has ${cassetteMaxCog}T`,
-          components: ['derailleur', 'cassette'],
-          estimatedCost: 0
+          type: 'capacity',
+          severity: 'high',
+          message: `Derailleur max cog (${derailleurMaxCog}T) insufficient for cassette (${largestCog}T)`,
+          components: [cassette.model, derailleur.model],
+          costToFix: 150,
+          estimatedCost: 150
+        })
+
+        solutions.push({
+          type: 'replace',
+          description: 'Upgrade to higher capacity derailleur',
+          cost: 150,
+          effort: 'medium',
+          reliability: 90,
+          message: `Replace with derailleur that supports ${largestCog}T+ cassettes`,
+          difficulty: 'medium'
         })
       }
     }
 
+    const isCompatible = issues.length === 0 || !issues.some(i => i.severity === 'critical')
+    const overallStatus = issues.length === 0 ? 'compatible' : 
+                         issues.some(i => i.severity === 'critical') ? 'incompatible' : 'warning'
+
     setCompatibilityResults({
-      isCompatible: issues.length === 0,
+      status: overallStatus,
       issues,
       solutions,
-      overallStatus: issues.length === 0 ? 'compatible' : issues.some(i => i.severity === 'critical') ? 'incompatible' : 'warning'
+      confidence: Math.max(0, 100 - (issues.length * 15)),
+      isCompatible,
+      overallStatus
     })
   }
 
   const getCompatibilityIcon = (status: string) => {
     switch (status) {
       case 'compatible':
-        return <CheckCircle className="w-6 h-6 text-success-600" />
+        return <CheckCircle className="w-6 h-6 text-green-600" />
       case 'warning':
-        return <AlertTriangle className="w-6 h-6 text-warning-600" />
+        return <AlertTriangle className="w-6 h-6 text-yellow-600" />
       case 'incompatible':
-        return <XCircle className="w-6 h-6 text-error-600" />
+        return <XCircle className="w-6 h-6 text-red-600" />
       default:
         return <Info className="w-6 h-6 text-gray-600" />
     }
@@ -194,18 +220,18 @@ function CompatibilityChecker({ components }: CompatibilityCheckerProps) {
   const getCompatibilityClass = (status: string) => {
     switch (status) {
       case 'compatible':
-        return 'border-success-200 bg-success-50'
+        return 'border-green-200 bg-green-50'
       case 'warning':
-        return 'border-warning-200 bg-warning-50'
+        return 'border-yellow-200 bg-yellow-50'
       case 'incompatible':
-        return 'border-error-200 bg-error-50'
+        return 'border-red-200 bg-red-50'
       default:
         return 'border-gray-200 bg-gray-50'
     }
   }
 
   return (
-    <div className="card">
+    <div className="bg-white rounded-lg shadow-sm border p-6">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">Component Compatibility Checker</h2>
       
       {/* Component Selection */}
@@ -221,51 +247,20 @@ function CompatibilityChecker({ components }: CompatibilityCheckerProps) {
                 onClick={() => handleComponentSelect(component)}
                 className={`p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
                   isSelected
-                    ? 'border-primary-500 bg-primary-50'
+                    ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h4 className="font-semibold text-gray-900">
-                      {component.manufacturer} {component.model}
-                    </h4>
-                    <p className="text-sm text-gray-600 capitalize">{component.category.toLowerCase()}</p>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900">{component.manufacturer}</h4>
+                    <p className="text-sm text-gray-600">{component.model}</p>
+                    <p className="text-xs text-gray-500 mt-1">{component.category}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">${component.msrp}</p>
-                    <p className="text-sm text-gray-600">{component.weightGrams}g</p>
-                  </div>
+                  {isSelected && (
+                    <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                  )}
                 </div>
-                
-                {/* Component-specific details */}
-                {component.cassette && (
-                  <div className="text-sm text-gray-600">
-                    <p>{component.cassette.speeds} speed • {component.cassette.cogs.join(', ')}T</p>
-                    <p>Freehub: {component.cassette.freehubType.replace('_', ' ')}</p>
-                  </div>
-                )}
-                
-                {component.hub && (
-                  <div className="text-sm text-gray-600">
-                    <p>Freehub: {component.hub.freehubTypes.join(', ').replace(/_/g, ' ')}</p>
-                    <p>Axle: {component.hub.axleType.replace('_', ' ')} {component.hub.axleWidth}mm</p>
-                  </div>
-                )}
-                
-                {component.derailleur && (
-                  <div className="text-sm text-gray-600">
-                    <p>{component.derailleur.speeds} speed • Max {component.derailleur.maxCog}T</p>
-                    <p>Capacity: {component.derailleur.capacity}T</p>
-                  </div>
-                )}
-                
-                {isSelected && (
-                  <div className="mt-2 flex items-center text-primary-600">
-                    <CheckCircle className="w-4 h-4 mr-1" />
-                    <span className="text-sm font-medium">Selected</span>
-                  </div>
-                )}
               </div>
             )
           })}
@@ -273,11 +268,13 @@ function CompatibilityChecker({ components }: CompatibilityCheckerProps) {
       </div>
 
       {/* Check Button */}
-      <div className="text-center mb-8">
-        <button 
+      <div className="mb-8">
+        <button
           onClick={checkCompatibility}
           disabled={selectedComponents.length < 2}
-          className={`btn-primary ${selectedComponents.length < 2 ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
+            selectedComponents.length < 2 ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
         >
           Check Compatibility
         </button>
@@ -301,9 +298,9 @@ function CompatibilityChecker({ components }: CompatibilityCheckerProps) {
                   <div key={index} className="p-3 bg-white rounded border">
                     <div className="flex items-start">
                       {issue.severity === 'critical' ? (
-                        <XCircle className="w-5 h-5 text-error-600 mt-0.5 mr-2 flex-shrink-0" />
+                        <XCircle className="w-5 h-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" />
                       ) : (
-                        <AlertTriangle className="w-5 h-5 text-warning-600 mt-0.5 mr-2 flex-shrink-0" />
+                        <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" />
                       )}
                       <div>
                         <p className="font-medium text-gray-900">{issue.message}</p>
@@ -364,24 +361,24 @@ export default function CompatibilityPage() {
         {/* Features Section */}
         <div className="mt-16 grid md:grid-cols-3 gap-8">
           <div className="text-center">
-            <div className="w-12 h-12 bg-success-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-6 h-6 text-success-600" />
+            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <Shield className="w-6 h-6 text-green-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Prevent Mistakes</h3>
             <p className="text-gray-600">Catch compatibility issues before you buy, not after you try to install.</p>
           </div>
 
           <div className="text-center">
-            <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Zap className="w-6 h-6 text-primary-600" />
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <Zap className="w-6 h-6 text-blue-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Instant Results</h3>
             <p className="text-gray-600">Get compatibility checks in seconds with our comprehensive database.</p>
           </div>
 
           <div className="text-center">
-            <div className="w-12 h-12 bg-warning-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <TrendingUp className="w-6 h-6 text-warning-600" />
+            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <TrendingUp className="w-6 h-6 text-yellow-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Save Money</h3>
             <p className="text-gray-600">Avoid buying incompatible parts and expensive returns.</p>
@@ -390,4 +387,4 @@ export default function CompatibilityPage() {
       </div>
     </div>
   )
-} 
+}
