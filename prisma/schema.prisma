@@ -75,12 +75,17 @@ model Cassette {
 
 enum FreehubType {
   SHIMANO_HG
+  SHIMANO_HG_L
+  SHIMANO_HG_L2
   SRAM_XD
   SRAM_XDR
+  CAMPAGNOLO
   CAMPAGNOLO_N3W
+  N3W
   MICRO_SPLINE
   DTSWISS_350
   DTSWISS_240
+  ROTOR_HG
 }
 
 // Chainring specific data
@@ -145,6 +150,7 @@ enum CageLength {
   SHORT
   MEDIUM
   LONG
+  ONE_SIZE
 }
 
 // Tire specific data
