@@ -157,19 +157,18 @@ export class GearCalculator {
         issues.push({
           type: 'freehub',
           severity: 'critical',
-          message: `Cassette requires ${cassetteFreehub} freehub but hub only supports ${hubFreehubs.join(', ')}`,
+          message: `Cassette requires ${cassetteFreehub} freehub, but hub has ${hubFreehubs.join(', ')}`,
           components: [cassette.manufacturer + ' ' + cassette.model, hub.manufacturer + ' ' + hub.model],
-          costToFix: 45,
-          estimatedCost: 45
+          costToFix: 150,
+          estimatedCost: 150
         })
 
         solutions.push({
           type: 'replace',
-          description: `Purchase ${cassetteFreehub} freehub body`,
-          cost: 45,
-          effort: 'medium',
-          reliability: 95,
-          message: `Purchase ${cassetteFreehub} freehub body for ${hub.manufacturer} ${hub.model}`,
+          component: 'freehub',
+          description: 'Replace freehub body or select compatible cassette',
+          estimatedCost: 150,
+          components: [cassette.manufacturer + ' ' + cassette.model],
           difficulty: 'medium'
         })
       }
@@ -177,47 +176,16 @@ export class GearCalculator {
 
     // Check derailleur capacity
     const derailleur = proposed.derailleur || current.derailleur
-    
     if (cassette?.cassette && derailleur?.derailleur) {
-      const maxCog = Math.max(...cassette.cassette.cogs)
-      
-      if (derailleur.derailleur.maxCog && maxCog > derailleur.derailleur.maxCog) {
+      const largestCog = Math.max(...cassette.cassette.cogs)
+      const maxCog = derailleur.derailleur.maxCog || 50
+
+      if (largestCog > maxCog) {
         issues.push({
           type: 'capacity',
-          severity: 'critical',
-          message: `Derailleur max cog is ${derailleur.derailleur.maxCog}t but cassette has ${maxCog}t`,
-          components: [derailleur.manufacturer + ' ' + derailleur.model, cassette.manufacturer + ' ' + cassette.model],
-          costToFix: 95,
-          estimatedCost: 95
-        })
-
-        solutions.push({
-          type: 'upgrade',
-          description: `Upgrade to derailleur with larger capacity`,
-          cost: 95,
-          effort: 'easy',
-          reliability: 100,
-          message: `Upgrade to derailleur with minimum ${maxCog}t capacity`,
-          difficulty: 'easy'
-        })
-      }
-    }
-
-    // Check speed compatibility
-    const speedComponents = [cassette, derailleur].filter(c => 
-      c?.cassette?.speeds || c?.derailleur?.speeds
-    )
-    
-    if (speedComponents.length >= 2) {
-      const speeds = speedComponents.map(c => c?.cassette?.speeds || c?.derailleur?.speeds)
-      const uniqueSpeeds = [...new Set(speeds)]
-      
-      if (uniqueSpeeds.length > 1) {
-        issues.push({
-          type: 'other',
-          severity: 'medium',
-          message: `Speed mismatch: Found ${uniqueSpeeds.join(' and ')} speed components`,
-          components: speedComponents.map(c => c!.manufacturer + ' ' + c!.model),
+          severity: 'high',
+          message: `Derailleur can't handle ${largestCog}T cog (max: ${maxCog}T)`,
+          components: [derailleur.manufacturer + ' ' + derailleur.model],
           costToFix: 0,
           estimatedCost: 0
         })
@@ -278,31 +246,29 @@ export class GearCalculator {
     const proposedCrossChaining = this.analyzeCrossChaining(proposedCassette, proposedChainring)
     
     // Weight calculations
-    const currentComponents = [current.cassette, current.chainring, current.chain, current.wheel, current.tire]
-    const proposedComponents = [proposed.cassette, proposed.chainring, proposed.chain, proposed.wheel, proposed.tire]
+    const currentComponents = [current.cassette, current.chainring, current.chain]
+    const proposedComponents = [proposed.cassette, proposed.chainring, proposed.chain]
     
     const currentWeight = this.calculateTotalWeight(currentComponents)
     const proposedWeight = this.calculateTotalWeight(proposedComponents)
+    const weightDifference = proposedWeight - currentWeight
     
     // Cost calculations
     const currentCost = this.calculateTotalCost(currentComponents)
     const proposedCost = this.calculateTotalCost(proposedComponents)
+    const costDifference = proposedCost - currentCost
     
     // Compatibility check
     const compatibility = this.checkCompatibility(current, proposed)
-    
-    // Calculate additional costs for compatibility fixes
-    const compatibilityCost = compatibility.solutions.reduce((total, solution) => total + solution.cost, 0)
-    const totalProposedCost = proposedCost + compatibilityCost
     
     return {
       performance: {
         topSpeed: {
           current: currentTopSpeed,
           proposed: proposedTopSpeed,
-          unit: 'mph',
+          unit: 'mph' as const,
           difference: proposedTopSpeed - currentTopSpeed,
-          percentage: ((proposedTopSpeed - currentTopSpeed) / currentTopSpeed) * 100
+          percentage: currentTopSpeed > 0 ? ((proposedTopSpeed - currentTopSpeed) / currentTopSpeed) * 100 : 0
         },
         climbingGear: {
           current: currentClimbingGear,
@@ -313,7 +279,7 @@ export class GearCalculator {
         gearRange: {
           current: currentGearRange,
           proposed: proposedGearRange,
-          unit: '%',
+          unit: '%' as const,
           difference: proposedGearRange - currentGearRange
         },
         gearRatios: proposedGearRatios,
@@ -321,82 +287,52 @@ export class GearCalculator {
           crossChaining: {
             current: currentCrossChaining,
             proposed: proposedCrossChaining,
-            improvement: this.calculateCrossChainingImprovement(currentCrossChaining, proposedCrossChaining)
+            improvement: Math.max(0, currentCrossChaining.length - proposedCrossChaining.length)
           },
-          optimalGears: this.findOptimalGears(proposedGearRatios),
-          efficiencyLoss: this.calculateEfficiencyLoss(proposedCrossChaining)
+          optimalGears: proposedGearRatios.slice(2, -2).map(r => r.ratio),
+          efficiencyLoss: Math.max(0, proposedCrossChaining.reduce((sum, issue) => sum + issue.efficiencyLoss, 0))
         }
       },
       weight: {
         current: currentWeight,
         proposed: proposedWeight,
-        difference: proposedWeight - currentWeight,
-        unit: 'g',
-        percentage: ((proposedWeight - currentWeight) / currentWeight) * 100,
-        costPerGram: currentWeight > proposedWeight ? 
-          (totalProposedCost - currentCost) / (currentWeight - proposedWeight) : undefined
+        difference: weightDifference,
+        unit: 'g' as const,
+        percentage: currentWeight > 0 ? (weightDifference / currentWeight) * 100 : 0,
+        costPerGram: weightDifference !== 0 ? Math.abs(costDifference / weightDifference) : 0
       },
       compatibility,
       cost: {
         current: currentCost,
         proposed: totalProposedCost,
         difference: totalProposedCost - currentCost,
-        currency: 'USD',
+        currency: 'USD' as const,
         includesCompatibilityFixes: compatibilityCost > 0,
-        breakdown: this.generateCostBreakdown(currentComponents, proposedComponents, compatibilityCost)
+        breakdown: this.generateCostBreakdown(currentComponents, proposedComponents, compatibilityCost),
+        upgradeValue: this.calculateUpgradeValue(weightDifference, totalProposedCost - currentCost)
       }
     }
   }
 
   /**
-   * Calculate cross-chaining improvement
-   */
-  private static calculateCrossChainingImprovement(
-    current: CrossChainingIssue[],
-    proposed: CrossChainingIssue[]
-  ): number {
-    const currentTotalLoss = current.reduce((sum, issue) => sum + issue.efficiencyLoss, 0)
-    const proposedTotalLoss = proposed.reduce((sum, issue) => sum + issue.efficiencyLoss, 0)
-    return Math.max(0, currentTotalLoss - proposedTotalLoss)
-  }
-
-  /**
-   * Find optimal gears (efficient gear ratios)
-   */
-  private static findOptimalGears(gearRatios: GearRatio[]): number[] {
-    // Optimal gears are typically in the middle range
-    const sortedRatios = gearRatios.map((gear, index) => ({ ...gear, index })).sort((a, b) => b.ratio - a.ratio)
-    const middleStart = Math.floor(sortedRatios.length * 0.3)
-    const middleEnd = Math.floor(sortedRatios.length * 0.7)
-    return sortedRatios.slice(middleStart, middleEnd).map(gear => gear.index)
-  }
-
-  /**
-   * Calculate total efficiency loss from cross-chaining
-   */
-  private static calculateEfficiencyLoss(crossChainingIssues: CrossChainingIssue[]): number {
-    return crossChainingIssues.reduce((total, issue) => total + issue.efficiencyLoss, 0)
-  }
-
-  /**
    * Generate cost breakdown
    */
-  private static generateCostBreakdown(
-    currentComponents: (Component | undefined)[],
+  static generateCostBreakdown(
+    currentComponents: (Component | undefined)[], 
     proposedComponents: (Component | undefined)[],
-    compatibilityCost: number
+    compatibilityCost: number = 0
   ): CostBreakdown[] {
     const breakdown: CostBreakdown[] = []
     
-    const componentTypes = ['cassette', 'chainring', 'chain', 'wheel', 'tire']
+    const categories = ['cassette', 'chainring', 'chain', 'wheel', 'tire']
     
-    componentTypes.forEach((type, index) => {
+    categories.forEach((category, index) => {
       const current = currentComponents[index]
       const proposed = proposedComponents[index]
       
       if (current || proposed) {
         breakdown.push({
-          component: type,
+          component: category,
           currentCost: current?.msrp || 0,
           proposedCost: proposed?.msrp || 0,
           difference: (proposed?.msrp || 0) - (current?.msrp || 0)
@@ -414,6 +350,17 @@ export class GearCalculator {
     }
     
     return breakdown
+  }
+
+  /**
+   * Calculate upgrade value (performance per dollar)
+   */
+  static calculateUpgradeValue(weightSavings: number, costIncrease: number): number {
+    if (costIncrease <= 0) return weightSavings > 0 ? 100 : 0
+    if (weightSavings <= 0) return 0
+    
+    // Simple value calculation: grams saved per dollar
+    return Math.round((weightSavings / costIncrease) * 100) / 100
   }
 
   /**
@@ -475,7 +422,7 @@ export class GearCalculator {
     largestChainring: number,
     largestCog: number,
     chainstayLength: number,
-    derailleurType: string = 'standard'
+    derailleurCapacity: number = 35
   ): ChainLengthResult {
     // Simplified chain length calculation
     const baseLength = 2 * chainstayLength + largestChainring + largestCog + 4
@@ -493,41 +440,38 @@ export class GearCalculator {
       },
       notes: [
         'This is a simplified calculation',
-        'Always verify with actual derailleur position',
-        'Consider chain line and derailleur capacity'
+        'Always test chain length before final installation',
+        'Consider derailleur capacity when sizing'
       ]
     }
   }
 
   /**
-   * Analyze chainline
+   * Calculate chainline analysis
    */
-  static analyzeChainline(
-    chainringOffset: number,
-    cassetteOffset: number,
-    chainstayLength: number
+  static calculateChainline(
+    frameChainline: number,
+    crankChainline: number,
+    cassetteChainline: number
   ): ChainlineResult {
-    const optimalChainline = 50 // Standard mountain bike chainline
-    const currentChainline = chainringOffset + (cassetteOffset / 2)
-    const deviation = Math.abs(currentChainline - optimalChainline)
-    
-    // Efficiency calculation based on deviation
-    const efficiency = Math.max(85, 100 - (deviation * 2))
+    const currentChainline = (crankChainline + cassetteChainline) / 2
+    const deviation = Math.abs(currentChainline - frameChainline)
+    const efficiency = Math.max(0, 100 - (deviation * 2))
     
     const recommendations: string[] = []
     
+    if (deviation > 2) {
+      recommendations.push('Consider adjusting chainring offset or bottom bracket spacers')
+    }
     if (deviation > 5) {
-      recommendations.push('Consider adjusting chainring offset or bottom bracket position')
+      recommendations.push('Large chainline deviation may cause poor shifting and increased wear')
     }
-    if (deviation > 10) {
-      recommendations.push('Significant chainline deviation may cause premature wear')
-    }
-    if (deviation < 2) {
+    if (efficiency > 95) {
       recommendations.push('Excellent chainline alignment')
     }
     
     return {
-      optimalChainline,
+      optimalChainline: frameChainline,
       currentChainline,
       deviation,
       efficiency,

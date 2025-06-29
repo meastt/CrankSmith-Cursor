@@ -24,13 +24,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check for existing session
     const checkAuth = async () => {
       try {
-        // In a real app, this would check localStorage, cookies, or make an API call
-        const savedUser = localStorage.getItem('cranksmith_user')
-        if (savedUser) {
-          setUser(JSON.parse(savedUser))
+        // Check if we're in the browser before accessing localStorage
+        if (typeof window !== 'undefined') {
+          const savedUser = localStorage.getItem('cranksmith_user')
+          if (savedUser) {
+            setUser(JSON.parse(savedUser))
+          }
         }
       } catch (error) {
         console.error('Auth check failed:', error)
@@ -57,7 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       setUser(mockUser)
-      localStorage.setItem('cranksmith_user', JSON.stringify(mockUser))
+      
+      // Only use localStorage in browser environment
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cranksmith_user', JSON.stringify(mockUser))
+      }
     } catch (error) {
       console.error('Login failed:', error)
       throw error
@@ -80,7 +85,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       setUser(mockUser)
-      localStorage.setItem('cranksmith_user', JSON.stringify(mockUser))
+      
+      // Only use localStorage in browser environment
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cranksmith_user', JSON.stringify(mockUser))
+      }
     } catch (error) {
       console.error('Signup failed:', error)
       throw error
@@ -91,7 +100,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null)
-    localStorage.removeItem('cranksmith_user')
+    
+    // Only use localStorage in browser environment
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('cranksmith_user')
+    }
   }
 
   const value = {
@@ -115,4 +128,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
-} 
+}
