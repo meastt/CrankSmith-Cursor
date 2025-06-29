@@ -5,6 +5,17 @@ import { GearCalculator } from '@/lib/gear-calculator'
 import { ChainlineResult } from '@/types/gear-calculator'
 import { Target, Ruler, Settings, TrendingUp, AlertTriangle, CheckCircle, Info, Gauge } from 'lucide-react'
 import { Breadcrumbs } from '@/components/ui/breadcrumbs'
+import { LoadingSpinner } from '@/components/ui/loading'
+import { toast } from '@/components/ui/toast'
+
+// Page Header Component
+const PageHeader = ({ title, description, breadcrumbs }: { title: string; description: string; breadcrumbs: Array<{ label: string; href: string }> }) => (
+  <div className="mb-8">
+    <Breadcrumbs items={breadcrumbs} />
+    <h1 className="text-3xl font-bold text-gray-900 mb-2">{title}</h1>
+    <p className="text-gray-600">{description}</p>
+  </div>
+)
 
 interface ChainlineParams {
   chainringOffset: number
@@ -25,6 +36,7 @@ export default function ChainlinePage() {
 
   const [results, setResults] = useState<ChainlineResult | null>(null)
   const [isCalculating, setIsCalculating] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleParamChange = (field: keyof ChainlineParams, value: any) => {
     setParams(prev => ({
@@ -43,9 +55,10 @@ export default function ChainlinePage() {
         params.chainstayLength
       )
       setResults(chainlineResults)
+      toast.success('Chainline analysis completed successfully!')
     } catch (error) {
       console.error('Calculation error:', error)
-      alert('Error analyzing chainline. Please check your inputs.')
+      toast.error('Error analyzing chainline. Please check your inputs.')
     } finally {
       setIsCalculating(false)
     }
@@ -67,21 +80,15 @@ export default function ChainlinePage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Chainline Analyzer
-          </h1>
-          <Breadcrumbs 
-            items={[
-              { label: 'Home', href: '/' },
-              { label: 'Calculators', href: '/calculators' },
-              { label: 'Chainline Analysis', href: '/calculators/chainline' }
-            ]} 
-          />
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Optimize your drivetrain alignment for maximum efficiency and reduced wear. Perfect chainline means better performance.
-          </p>
-        </div>
+        <PageHeader 
+          title="Chainline Analyzer"
+          description="Optimize your drivetrain alignment for maximum efficiency and reduced wear. Perfect chainline means better performance."
+          breadcrumbs={[
+            { label: 'Home', href: '/' },
+            { label: 'Calculators', href: '/calculators' },
+            { label: 'Chainline Analysis', href: '/calculators/chainline' }
+          ]}
+        />
 
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Input Form */}

@@ -5,6 +5,17 @@ import { GearCalculator } from '@/lib/gear-calculator'
 import { ChainLengthResult } from '@/types/gear-calculator'
 import { Link, Ruler, Settings, Info, CheckCircle, AlertTriangle, Calculator } from 'lucide-react'
 import { Breadcrumbs } from '@/components/ui/breadcrumbs'
+import { LoadingSpinner } from '@/components/ui/loading'
+import { toast } from '@/components/ui/toast'
+
+// Page Header Component
+const PageHeader = ({ title, description, breadcrumbs }: { title: string; description: string; breadcrumbs: Array<{ label: string; href: string }> }) => (
+  <div className="mb-8">
+    <Breadcrumbs items={breadcrumbs} />
+    <h1 className="text-3xl font-bold text-gray-900 mb-2">{title}</h1>
+    <p className="text-gray-600">{description}</p>
+  </div>
+)
 
 interface ChainLengthParams {
   chainringTeeth: number
@@ -25,6 +36,7 @@ export default function ChainLengthPage() {
 
   const [results, setResults] = useState<ChainLengthResult | null>(null)
   const [isCalculating, setIsCalculating] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleParamChange = (field: keyof ChainLengthParams, value: any) => {
     setParams(prev => ({
@@ -43,9 +55,10 @@ export default function ChainLengthPage() {
         params.chainstayLength
       )
       setResults(chainResults)
+      toast.success('Chain length calculated successfully!')
     } catch (error) {
       console.error('Calculation error:', error)
-      alert('Error calculating chain length. Please check your inputs.')
+      toast.error('Error calculating chain length. Please check your inputs.')
     } finally {
       setIsCalculating(false)
     }
@@ -60,21 +73,15 @@ export default function ChainLengthPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Chain Length Calculator
-          </h1>
-          <Breadcrumbs 
-            items={[
-              { label: 'Home', href: '/' },
-              { label: 'Calculators', href: '/calculators' },
-              { label: 'Chain Length', href: '/calculators/chain-length' }
-            ]} 
-          />
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Calculate the perfect chain length for your drivetrain. Get the right length for optimal shifting and derailleur performance.
-          </p>
-        </div>
+        <PageHeader 
+          title="Chain Length Calculator"
+          description="Calculate the perfect chain length for your drivetrain. Get the right length for optimal shifting and derailleur performance."
+          breadcrumbs={[
+            { label: 'Home', href: '/' },
+            { label: 'Calculators', href: '/calculators' },
+            { label: 'Chain Length', href: '/calculators/chain-length' }
+          ]}
+        />
 
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Input Form */}

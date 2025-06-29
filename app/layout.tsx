@@ -3,7 +3,8 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import Link from 'next/link'
 import { Calculator, CheckCircle, Trophy, Menu, X, User } from 'lucide-react'
-import { AuthProvider } from '@/lib/auth-context'
+import { Suspense } from 'react'
+import { ToastContainer } from '@/components/ui/toast'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -69,7 +70,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <AuthProvider>
+        <Suspense fallback={<div>Loading...</div>}>
           {/* Navigation Header */}
           <nav className="bg-white shadow-sm border-b">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -114,7 +115,8 @@ export default function RootLayout({
           <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
             {children}
           </div>
-        </AuthProvider>
+          <ToastContainer />
+        </Suspense>
       </body>
     </html>
   )

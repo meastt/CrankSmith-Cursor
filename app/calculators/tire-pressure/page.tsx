@@ -4,6 +4,17 @@ import { useState } from 'react'
 import { TirePressureCalculator, TirePressureParams, TirePressureResult } from '@/lib/tire-pressure-calculator'
 import { Gauge, Weight, Bike, Settings, TrendingUp, AlertTriangle, CheckCircle, Info, Droplets, Mountain } from 'lucide-react'
 import { Breadcrumbs } from '@/components/ui/breadcrumbs'
+import { LoadingSpinner } from '@/components/ui/loading'
+import { toast } from '@/components/ui/toast'
+
+// Page Header Component
+const PageHeader = ({ title, description, breadcrumbs }: { title: string; description: string; breadcrumbs: Array<{ label: string; href: string }> }) => (
+  <div className="mb-8">
+    <Breadcrumbs items={breadcrumbs} />
+    <h1 className="text-3xl font-bold text-gray-900 mb-2">{title}</h1>
+    <p className="text-gray-600">{description}</p>
+  </div>
+)
 
 export default function TirePressurePage() {
   const [params, setParams] = useState<TirePressureParams>({
@@ -19,6 +30,7 @@ export default function TirePressurePage() {
 
   const [results, setResults] = useState<TirePressureResult | null>(null)
   const [isCalculating, setIsCalculating] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleParamChange = (field: keyof TirePressureParams, value: any) => {
     setParams(prev => {
@@ -40,9 +52,10 @@ export default function TirePressurePage() {
     try {
       const pressureResults = TirePressureCalculator.calculateOptimalPressure(params)
       setResults(pressureResults)
+      toast.success('Tire pressure calculated successfully!')
     } catch (error) {
       console.error('Calculation error:', error)
-      alert('Error calculating tire pressure. Please check your inputs.')
+      toast.error('Error calculating tire pressure. Please check your inputs.')
     } finally {
       setIsCalculating(false)
     }
@@ -89,22 +102,15 @@ export default function TirePressurePage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Advanced Tire Pressure Calculator
-          </h1>
-          <Breadcrumbs 
-            items={[
-              { label: 'Home', href: '/' },
-              { label: 'Calculators', href: '/calculators' },
-              { label: 'Tire Pressure', href: '/calculators/tire-pressure' }
-            ]} 
-          />
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Get scientifically accurate tire pressure recommendations based on your weight, bike setup, terrain, and riding style. 
-            Optimized for road, gravel, and mountain bike disciplines.
-          </p>
-        </div>
+        <PageHeader 
+          title="Advanced Tire Pressure Calculator"
+          description="Get scientifically accurate tire pressure recommendations based on your weight, bike setup, terrain, and riding style. Optimized for road, gravel, and mountain bike disciplines."
+          breadcrumbs={[
+            { label: 'Home', href: '/' },
+            { label: 'Calculators', href: '/calculators' },
+            { label: 'Tire Pressure', href: '/calculators/tire-pressure' }
+          ]}
+        />
 
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Input Form */}

@@ -5,6 +5,17 @@ import { GearCalculator } from '@/lib/gear-calculator'
 import { BikeSetup, Component, type ComparisonResults } from '@/types/gear-calculator'
 import { ArrowRight, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, XCircle, Weight, DollarSign, Zap, Plus, Minus, Settings, Bike } from 'lucide-react'
 import { Breadcrumbs } from '@/components/ui/breadcrumbs'
+import { LoadingSpinner } from '@/components/ui/loading'
+import { toast } from '@/components/ui/toast'
+
+// Page Header Component
+const PageHeader = ({ title, description, breadcrumbs }: { title: string; description: string; breadcrumbs: Array<{ label: string; href: string }> }) => (
+  <div className="mb-8">
+    <Breadcrumbs items={breadcrumbs} />
+    <h1 className="text-3xl font-bold text-gray-900 mb-2">{title}</h1>
+    <p className="text-gray-600">{description}</p>
+  </div>
+)
 
 // Sample data for demo - in real app this would come from database
 const sampleComponents: Component[] = [
@@ -435,37 +446,32 @@ export default function GearComparisonPage() {
   const [currentSetup, setCurrentSetup] = useState<BikeSetup>({})
   const [proposedSetup, setProposedSetup] = useState<BikeSetup>({})
   const [results, setResults] = useState<ComparisonResults | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleCompare = () => {
     if (!currentSetup.cassette || !currentSetup.chainring || 
         !proposedSetup.cassette || !proposedSetup.chainring) {
-      alert('Please select both cassette and chainring for current and proposed setups')
+      toast.error('Please select both cassette and chainring for current and proposed setups')
       return
     }
 
     const comparisonResults = GearCalculator.compareSetups(currentSetup, proposedSetup)
     setResults(comparisonResults)
+    toast.success('Gear comparison completed successfully!')
   }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Gear Comparison Calculator
-          </h1>
-          <Breadcrumbs 
-            items={[
-              { label: 'Home', href: '/' },
-              { label: 'Calculators', href: '/calculators' },
-              { label: 'Gear Comparison', href: '/calculators/gear-comparison' }
-            ]} 
-          />
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Compare your current drivetrain with any proposed changes. See performance, weight, and compatibility differences instantly.
-          </p>
-        </div>
+        <PageHeader 
+          title="Gear Comparison Calculator"
+          description="Compare your current drivetrain with any proposed changes. See performance, weight, and compatibility differences instantly."
+          breadcrumbs={[
+            { label: 'Home', href: '/' },
+            { label: 'Calculators', href: '/calculators' },
+            { label: 'Gear Comparison', href: '/calculators/gear-comparison' }
+          ]}
+        />
 
         {/* Component Selection */}
         <div className="grid lg:grid-cols-2 gap-8 mb-8">
