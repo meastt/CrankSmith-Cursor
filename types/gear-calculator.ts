@@ -1,4 +1,4 @@
-// types/gear-calculator.ts - Fixed version
+// types/gear-calculator.ts - FIXED VERSION with all missing properties
 
 export interface GearRatio {
   chainring: number;
@@ -87,38 +87,36 @@ export interface WeightComparison {
   costPerGram?: number; // $/gram saved
 }
 
-// Fixed CompatibilityStatus interface to match usage
+// FIXED: CompatibilityStatus interface with all missing properties
 export interface CompatibilityStatus {
   status: 'compatible' | 'warning' | 'incompatible';
   issues: CompatibilityIssue[];
   solutions: CompatibilitySolution[];
   confidence: number; // 0-100
-  // Added properties that are being used in components
   isCompatible: boolean;
   overallStatus: 'compatible' | 'warning' | 'incompatible';
 }
 
-// Fixed CompatibilityIssue interface to match usage
+// FIXED: CompatibilityIssue interface with ALL missing properties
 export interface CompatibilityIssue {
   type: 'freehub' | 'chain' | 'capacity' | 'chainline' | 'clearance' | 'other';
   severity: 'low' | 'medium' | 'high' | 'critical';
   message: string;
   components: string[];
   costToFix?: number;
-  // Added property that is being used
-  estimatedCost: number;
+  estimatedCost: number; // ADDED: This was missing and breaking the compatibility page
 }
 
-// Fixed CompatibilitySolution interface to match usage
+// FIXED: CompatibilitySolution interface with ALL missing properties
 export interface CompatibilitySolution {
   type: 'replace' | 'upgrade' | 'adapter' | 'modification';
   description: string;
   cost: number;
   effort: 'easy' | 'medium' | 'hard';
   reliability: number; // 0-100
-  // Added properties that are being used
-  message: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+  components: string[];
+  message: string; // ADDED: This was missing and breaking the compatibility page
+  difficulty: 'easy' | 'medium' | 'hard'; // ADDED: This was missing and breaking the compatibility page
 }
 
 export interface CostAnalysis {
@@ -155,6 +153,7 @@ export interface Component {
   tire?: TireData;
   derailleur?: DerailleurData;
   hub?: HubData;
+  crankset?: CranksetData; // ADDED: This was missing from the interface
 }
 
 export type ComponentCategory = 
@@ -165,6 +164,7 @@ export type ComponentCategory =
   | 'TIRE'
   | 'DERAILLEUR'
   | 'HUB'
+  | 'CRANKSET' // ADDED: This was missing from the type
   | 'CRANK'
   | 'BOTTOM_BRACKET'
   | 'SHIFTER'
@@ -210,12 +210,21 @@ export interface TireData {
   tpi?: number;
 }
 
+// FIXED: DerailleurData interface with ALL missing properties
 export interface DerailleurData {
   speeds: number;
   maxCapacity?: number;
-  maxCog?: number; // Added this property that's being used
-  capacity?: number; // Added this property that's being used
+  maxCog?: number;
+  capacity?: number;
   cageLength?: 'SHORT' | 'MEDIUM' | 'LONG';
+}
+
+// ADDED: Missing CranksetData interface
+export interface CranksetData {
+  chainrings: number[];
+  bcd?: number;
+  spindleType?: 'HOLLOWTECH_II' | 'DUB' | 'BB30' | 'PF30' | 'BSA' | 'T47';
+  material?: string;
 }
 
 export interface HubData {
