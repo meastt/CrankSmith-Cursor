@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { GearCalculator } from '@/lib/gear-calculator'
-import { BikeSetup, ComparisonResults, Component } from '@/types/gear-calculator'
+import { BikeSetup, Component, type ComparisonResults } from '@/types/gear-calculator'
 import { ArrowRight, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, XCircle, Weight, DollarSign, Zap, Plus, Minus, Settings, Bike } from 'lucide-react'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 
 // Sample data for demo - in real app this would come from database
 const sampleComponents: Component[] = [
@@ -454,6 +455,13 @@ export default function GearComparisonPage() {
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Gear Comparison Calculator
           </h1>
+          <Breadcrumbs 
+            items={[
+              { label: 'Home', href: '/' },
+              { label: 'Calculators', href: '/calculators' },
+              { label: 'Gear Comparison', href: '/calculators/gear-comparison' }
+            ]} 
+          />
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Compare your current drivetrain with any proposed changes. See performance, weight, and compatibility differences instantly.
           </p>

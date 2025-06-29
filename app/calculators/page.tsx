@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Calculator, Gauge, Link as LinkIcon, Target, CheckCircle, ArrowRight, Zap, TrendingUp, Shield } from 'lucide-react'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 
 const calculators = [
   {
@@ -85,6 +86,12 @@ export default function CalculatorsPage() {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Cycling Calculators
           </h1>
+          <Breadcrumbs 
+            items={[
+              { label: 'Home', href: '/' },
+              { label: 'Calculators', href: '/calculators' }
+            ]} 
+          />
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Every tool you need to optimize your bike setup. From gear ratios to tire pressure, we've got you covered.
           </p>

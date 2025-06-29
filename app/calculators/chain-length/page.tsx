@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { GearCalculator } from '@/lib/gear-calculator'
 import { ChainLengthResult } from '@/types/gear-calculator'
 import { Link, Ruler, Settings, Info, CheckCircle, AlertTriangle, Calculator } from 'lucide-react'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 
 interface ChainLengthParams {
   chainringTeeth: number
@@ -39,8 +40,7 @@ export default function ChainLengthPage() {
       const chainResults = GearCalculator.calculateChainLength(
         params.chainringTeeth,
         params.cassetteLargestCog,
-        params.chainstayLength,
-        params.derailleurCapacity
+        params.chainstayLength
       )
       setResults(chainResults)
     } catch (error) {
@@ -64,6 +64,13 @@ export default function ChainLengthPage() {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Chain Length Calculator
           </h1>
+          <Breadcrumbs 
+            items={[
+              { label: 'Home', href: '/' },
+              { label: 'Calculators', href: '/calculators' },
+              { label: 'Chain Length', href: '/calculators/chain-length' }
+            ]} 
+          />
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Calculate the perfect chain length for your drivetrain. Get the right length for optimal shifting and derailleur performance.
           </p>

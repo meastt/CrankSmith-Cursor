@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { GearCalculator } from '@/lib/gear-calculator'
 import { ChainlineResult } from '@/types/gear-calculator'
 import { Target, Ruler, Settings, TrendingUp, AlertTriangle, CheckCircle, Info, Gauge } from 'lucide-react'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 
 interface ChainlineParams {
   chainringOffset: number
@@ -70,6 +71,13 @@ export default function ChainlinePage() {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Chainline Analyzer
           </h1>
+          <Breadcrumbs 
+            items={[
+              { label: 'Home', href: '/' },
+              { label: 'Calculators', href: '/calculators' },
+              { label: 'Chainline Analysis', href: '/calculators/chainline' }
+            ]} 
+          />
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Optimize your drivetrain alignment for maximum efficiency and reduced wear. Perfect chainline means better performance.
           </p>

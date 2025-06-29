@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { TirePressureCalculator, TirePressureParams, TirePressureResult } from '@/lib/tire-pressure-calculator'
-import { Gauge, Weight, Bike, Settings, TrendingUp, AlertTriangle, CheckCircle, Info, Droplets, Mountain, Road } from 'lucide-react'
+import { Gauge, Weight, Bike, Settings, TrendingUp, AlertTriangle, CheckCircle, Info, Droplets, Mountain } from 'lucide-react'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 
 export default function TirePressurePage() {
   const [params, setParams] = useState<TirePressureParams>({
@@ -92,6 +93,13 @@ export default function TirePressurePage() {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Advanced Tire Pressure Calculator
           </h1>
+          <Breadcrumbs 
+            items={[
+              { label: 'Home', href: '/' },
+              { label: 'Calculators', href: '/calculators' },
+              { label: 'Tire Pressure', href: '/calculators/tire-pressure' }
+            ]} 
+          />
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
             Get scientifically accurate tire pressure recommendations based on your weight, bike setup, terrain, and riding style. 
             Optimized for road, gravel, and mountain bike disciplines.
