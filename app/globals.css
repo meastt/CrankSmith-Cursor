@@ -227,6 +227,116 @@
   .list-decimal {
     @apply list-decimal pl-5 space-y-1;
   }
+
+  /* ADDED: Missing color utility classes used in components */
+  .text-primary-600 {
+    @apply text-blue-600;
+  }
+  
+  .text-primary-700 {
+    @apply text-blue-700;
+  }
+  
+  .text-success-600 {
+    @apply text-green-600;
+  }
+  
+  .text-success-500 {
+    @apply text-green-500;
+  }
+  
+  .text-warning-600 {
+    @apply text-yellow-600;
+  }
+  
+  .text-error-600 {
+    @apply text-red-600;
+  }
+  
+  .bg-primary-50 {
+    @apply bg-blue-50;
+  }
+  
+  .bg-primary-100 {
+    @apply bg-blue-100;
+  }
+  
+  .bg-primary-200 {
+    @apply bg-blue-200;
+  }
+  
+  .bg-primary-600 {
+    @apply bg-blue-600;
+  }
+  
+  .bg-primary-700 {
+    @apply bg-blue-700;
+  }
+  
+  .border-primary-200 {
+    @apply border-blue-200;
+  }
+  
+  .border-primary-500 {
+    @apply border-blue-500;
+  }
+  
+  .bg-success-100 {
+    @apply bg-green-100;
+  }
+  
+  .bg-success-200 {
+    @apply bg-green-200;
+  }
+  
+  .border-success-200 {
+    @apply border-green-200;
+  }
+  
+  .bg-warning-100 {
+    @apply bg-yellow-100;
+  }
+  
+  .bg-warning-200 {
+    @apply bg-yellow-200;
+  }
+  
+  .border-warning-200 {
+    @apply border-yellow-200;
+  }
+  
+  .bg-error-100 {
+    @apply bg-red-100;
+  }
+  
+  .bg-error-200 {
+    @apply bg-red-200;
+  }
+  
+  .border-error-200 {
+    @apply border-red-200;
+  }
+
+  /* ADDED: Focus ring utilities */
+  .focus\:ring-primary-500:focus {
+    @apply ring-blue-500;
+  }
+  
+  .hover\:bg-primary-200:hover {
+    @apply bg-blue-200;
+  }
+  
+  .hover\:bg-success-200:hover {
+    @apply bg-green-200;
+  }
+  
+  .hover\:bg-warning-200:hover {
+    @apply bg-yellow-200;
+  }
+  
+  .hover\:bg-error-200:hover {
+    @apply bg-red-200;
+  }
 }
 
 @layer utilities {

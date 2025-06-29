@@ -478,4 +478,57 @@ export class GearCalculator {
       recommendations
     }
   }
+
+  /**
+   * Analyze chainline - matches the function signature used in chainline page
+   */
+  static analyzeChainline(
+    chainringOffset: number,
+    cassetteOffset: number,
+    chainstayLength: number
+  ): ChainlineResult {
+    // Calculate frame-specific optimal chainline
+    const frameChainline = 42.5 // Standard MTB chainline (can be made dynamic based on frame type)
+    
+    // Calculate actual chainline based on component offsets
+    const crankChainline = frameChainline + chainringOffset
+    const cassetteChainline = frameChainline + cassetteOffset
+    const actualChainline = (crankChainline + cassetteChainline) / 2
+    
+    // Calculate deviation and efficiency
+    const deviation = Math.abs(actualChainline - frameChainline)
+    const efficiency = Math.max(0, 100 - (deviation * 2))
+    
+    const recommendations: string[] = []
+    
+    // Generate specific recommendations
+    if (deviation > 3) {
+      recommendations.push('Significant chainline deviation detected - consider adjusting component offsets')
+    }
+    if (deviation > 1 && deviation <= 3) {
+      recommendations.push('Minor chainline deviation - acceptable for most riding')
+    }
+    if (efficiency < 85) {
+      recommendations.push('Poor chainline efficiency may cause increased wear and noise')
+    }
+    if (efficiency >= 95) {
+      recommendations.push('Excellent chainline - optimal efficiency and component life')
+    }
+    
+    // Chainstay-specific recommendations
+    if (chainstayLength < 420) {
+      recommendations.push('Short chainstays may require more precise chainline alignment')
+    }
+    if (chainstayLength > 450) {
+      recommendations.push('Longer chainstays provide more chainline tolerance')
+    }
+    
+    return {
+      optimalChainline: frameChainline,
+      currentChainline: actualChainline,
+      deviation,
+      efficiency,
+      recommendations
+    }
+  }
 }

@@ -105,6 +105,7 @@ function ComponentSelector({ title, setup, onSetupChange, components }: Componen
   
   const categories = ['CASSETTE', 'CHAINRING', 'CRANKSET']
   
+  // FIXED: Complete the filteredComponents logic
   const filteredComponents = components.filter(comp => comp.category === selectedCategory)
   
   const handleComponentSelect = (component: Component) => {
@@ -222,7 +223,7 @@ function ComponentSelector({ title, setup, onSetupChange, components }: Componen
       
       {/* Setup Summary */}
       <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-        <h3 className="font-semibold text-gray-900 mb-3">Current Setup</h3>
+        <h3 className="font-semibold text-gray-900 mb-3">Setup Summary</h3>
         <div className="space-y-2 text-sm">
           {setup.cassette && (
             <div className="flex justify-between">
@@ -321,63 +322,111 @@ export default function GearComparisonPage() {
           <div className="card">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Comparison Results</h2>
             
+            {/* Performance Metrics */}
             <div className="grid md:grid-cols-3 gap-6 mb-8">
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-2">Top Speed</h3>
+                <p className="text-2xl font-bold text-primary-600">
+                  {results.performance.topSpeed.proposed.toFixed(1)} mph
+                </p>
+                <p className="text-sm text-gray-600">
+                  {results.performance.topSpeed.difference > 0 ? '+' : ''}{results.performance.topSpeed.difference.toFixed(1)} mph change
+                </p>
+              </div>
+              
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-2">Climbing Gear</h3>
+                <p className="text-2xl font-bold text-primary-600">
+                  {results.performance.climbingGear.proposed.toFixed(2)}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {results.performance.climbingGear.difference > 0 ? '+' : ''}{results.performance.climbingGear.difference.toFixed(2)} ratio change
+                </p>
+              </div>
+              
               <div className="text-center p-4 bg-gray-50 rounded-lg">
                 <h3 className="font-semibold text-gray-900 mb-2">Gear Range</h3>
                 <p className="text-2xl font-bold text-primary-600">
-                  {results.gearRange.toFixed(1)}
+                  {results.performance.gearRange.proposed}%
                 </p>
-                <p className="text-sm text-gray-600">Ratio</p>
-              </div>
-              
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-2">Lowest Gear</h3>
-                <p className="text-2xl font-bold text-primary-600">
-                  {results.lowestGear.toFixed(1)}
+                <p className="text-sm text-gray-600">
+                  {results.performance.gearRange.difference > 0 ? '+' : ''}{results.performance.gearRange.difference}% change
                 </p>
-                <p className="text-sm text-gray-600">Gear Inches</p>
-              </div>
-              
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-2">Highest Gear</h3>
-                <p className="text-2xl font-bold text-primary-600">
-                  {results.highestGear.toFixed(1)}
-                </p>
-                <p className="text-sm text-gray-600">Gear Inches</p>
               </div>
             </div>
             
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Gear Ratios</h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Current Setup</h4>
-                  <div className="space-y-1">
-                    {results.currentGears?.map((gear, index) => (
-                      <div key={index} className="flex justify-between text-sm">
-                        <span>Gear {index + 1}:</span>
-                        <span className="font-medium">{gear.toFixed(2)}</span>
-                      </div>
-                    ))}
+            {/* Weight and Cost Analysis */}
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-3">Weight Analysis</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Current:</span>
+                    <span>{results.weight.current}g</span>
                   </div>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Proposed Setup</h4>
-                  <div className="space-y-1">
-                    {results.proposedGears?.map((gear, index) => (
-                      <div key={index} className="flex justify-between text-sm">
-                        <span>Gear {index + 1}:</span>
-                        <span className="font-medium">{gear.toFixed(2)}</span>
-                      </div>
-                    ))}
+                  <div className="flex justify-between">
+                    <span>Proposed:</span>
+                    <span>{results.weight.proposed}g</span>
+                  </div>
+                  <div className="flex justify-between font-semibold">
+                    <span>Difference:</span>
+                    <span className={results.weight.difference > 0 ? 'text-red-600' : 'text-green-600'}>
+                      {results.weight.difference > 0 ? '+' : ''}{results.weight.difference}g
+                    </span>
                   </div>
                 </div>
               </div>
+              
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-3">Cost Analysis</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Current:</span>
+                    <span>${results.cost.current.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Proposed:</span>
+                    <span>${results.cost.proposed.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold">
+                    <span>Difference:</span>
+                    <span className={results.cost.difference > 0 ? 'text-red-600' : 'text-green-600'}>
+                      {results.cost.difference > 0 ? '+' : ''}${results.cost.difference.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Compatibility Status */}
+            <div className="p-4 rounded-lg" style={{
+              backgroundColor: results.compatibility.status === 'compatible' ? '#f0f9ff' : 
+                             results.compatibility.status === 'warning' ? '#fffbeb' : '#fef2f2'
+            }}>
+              <div className="flex items-center mb-2">
+                {results.compatibility.status === 'compatible' && <CheckCircle className="w-5 h-5 text-green-600 mr-2" />}
+                {results.compatibility.status === 'warning' && <AlertTriangle className="w-5 h-5 text-yellow-600 mr-2" />}
+                {results.compatibility.status === 'incompatible' && <XCircle className="w-5 h-5 text-red-600 mr-2" />}
+                <h3 className="font-semibold text-gray-900">
+                  Compatibility: {results.compatibility.status.charAt(0).toUpperCase() + results.compatibility.status.slice(1)}
+                </h3>
+              </div>
+              
+              {results.compatibility.issues.length > 0 && (
+                <div className="space-y-1">
+                  {results.compatibility.issues.map((issue, index) => (
+                    <p key={index} className="text-sm text-gray-700">• {issue.message}</p>
+                  ))}
+                </div>
+              )}
+              
+              {results.compatibility.issues.length === 0 && (
+                <p className="text-sm text-gray-700">All components are compatible with each other.</p>
+              )}
             </div>
           </div>
         )}
       </div>
     </div>
   )
-} 
+}

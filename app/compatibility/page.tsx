@@ -1,3 +1,5 @@
+"use client"
+
 // Fixed compatibility page with all critical issues resolved
 
 import { useState } from 'react'
@@ -210,7 +212,7 @@ function CompatibilityChecker({ components }: CompatibilityCheckerProps) {
     
     if (speedComponents.length >= 2) {
       const speeds = speedComponents.map(c => c.cassette?.speeds || c.derailleur?.speeds)
-      const uniqueSpeeds = [...new Set(speeds)]
+      const uniqueSpeeds = Array.from(new Set(speeds))
       
       if (uniqueSpeeds.length > 1) {
         issues.push({
