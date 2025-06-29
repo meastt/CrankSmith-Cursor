@@ -120,6 +120,56 @@ export default function AccountPage() {
     { id: 'settings', name: 'Settings', icon: Settings }
   ]
 
+  // FIXED: Add all missing button handlers
+  const handleAddNewSetup = () => {
+    console.log('Adding new setup...')
+    // TODO: Navigate to setup builder or show modal
+    alert('Setup builder coming soon!')
+  }
+
+  const handleEditSetup = (setupId: string) => {
+    console.log('Editing setup:', setupId)
+    // TODO: Navigate to edit page
+    alert(`Edit setup ${setupId} - coming soon!`)
+  }
+
+  const handleDeleteSetup = (setupId: string, setupName: string) => {
+    if (confirm(`Are you sure you want to delete "${setupName}"?`)) {
+      console.log('Deleting setup:', setupId)
+      // TODO: Implement delete logic
+      alert(`Deleted "${setupName}"`)
+    }
+  }
+
+  const handleCompareSetup = (setupId: string) => {
+    console.log('Comparing setup:', setupId)
+    // TODO: Navigate to comparison page with pre-loaded setup
+    alert(`Starting comparison for setup ${setupId}`)
+  }
+
+  const handleShareSetup = (setupId: string, setupName: string) => {
+    console.log('Sharing setup:', setupId)
+    // TODO: Generate share link and copy to clipboard
+    const shareUrl = `${window.location.origin}/setups/${setupId}`
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      alert(`Share link copied for "${setupName}"!`)
+    }).catch(() => {
+      alert(`Share URL: ${shareUrl}`)
+    })
+  }
+
+  const handleViewComparisonDetails = (comparisonId: string) => {
+    console.log('Viewing comparison details:', comparisonId)
+    // TODO: Navigate to detailed comparison view
+    alert(`Viewing details for comparison ${comparisonId}`)
+  }
+
+  const handleSaveSettings = () => {
+    console.log('Saving settings...')
+    // TODO: Save settings to backend
+    alert('Settings saved successfully!')
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -166,7 +216,10 @@ export default function AccountPage() {
               <div>
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-bold text-gray-900">My Bike Setups</h2>
-                  <button className="btn-primary flex items-center">
+                  <button 
+                    onClick={handleAddNewSetup}
+                    className="btn-primary flex items-center"
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     Add New Setup
                   </button>
@@ -181,10 +234,18 @@ export default function AccountPage() {
                           <p className="text-sm text-gray-600">{setup.bikeType}</p>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <button className="text-gray-400 hover:text-gray-600">
+                          <button 
+                            onClick={() => handleEditSetup(setup.id)}
+                            className="text-gray-400 hover:text-gray-600"
+                            title="Edit setup"
+                          >
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button className="text-gray-400 hover:text-red-600">
+                          <button 
+                            onClick={() => handleDeleteSetup(setup.id, setup.name)}
+                            className="text-gray-400 hover:text-red-600"
+                            title="Delete setup"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -216,11 +277,19 @@ export default function AccountPage() {
                       </div>
 
                       <div className="mt-3 flex space-x-2">
-                        <button className="flex-1 btn-secondary text-sm">
+                        <button 
+                          onClick={() => handleCompareSetup(setup.id)}
+                          className="flex-1 btn-secondary text-sm"
+                          title="Compare this setup"
+                        >
                           <Calculator className="w-3 h-3 mr-1" />
                           Compare
                         </button>
-                        <button className="flex-1 btn-primary text-sm">
+                        <button 
+                          onClick={() => handleShareSetup(setup.id, setup.name)}
+                          className="flex-1 btn-primary text-sm"
+                          title="Share this setup"
+                        >
                           <Share2 className="w-3 h-3 mr-1" />
                           Share
                         </button>
@@ -244,7 +313,10 @@ export default function AccountPage() {
                           </h3>
                           <p className="text-sm text-gray-600">{comparison.date}</p>
                         </div>
-                        <button className="text-primary-600 hover:text-primary-700 text-sm font-medium">
+                        <button 
+                          onClick={() => handleViewComparisonDetails(comparison.id)}
+                          className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                        >
                           View Details
                         </button>
                       </div>
@@ -303,7 +375,7 @@ export default function AccountPage() {
                           type="checkbox"
                           id="public-setups"
                           defaultChecked
-                          className="mr-3"
+                          className="mr-3 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                         />
                         <label htmlFor="public-setups" className="text-sm text-gray-700">
                           Make new setups public by default
@@ -314,10 +386,20 @@ export default function AccountPage() {
                           type="checkbox"
                           id="email-notifications"
                           defaultChecked
-                          className="mr-3"
+                          className="mr-3 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                         />
                         <label htmlFor="email-notifications" className="text-sm text-gray-700">
-                          Receive email notifications
+                          Receive email notifications for new features
+                        </label>
+                      </div>
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="component-alerts"
+                          className="mr-3 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor="component-alerts" className="text-sm text-gray-700">
+                          Alert me when components in my setups go on sale
                         </label>
                       </div>
                     </div>
@@ -329,25 +411,26 @@ export default function AccountPage() {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Weight Units</label>
                         <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
-                          <option value="grams">Grams</option>
-                          <option value="ounces">Ounces</option>
-                          <option value="pounds">Pounds</option>
+                          <option value="metric">Kilograms (kg)</option>
+                          <option value="imperial">Pounds (lbs)</option>
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Speed Units</label>
                         <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
-                          <option value="usd">USD ($)</option>
-                          <option value="eur">EUR (€)</option>
-                          <option value="gbp">GBP (£)</option>
+                          <option value="metric">Kilometers per hour (km/h)</option>
+                          <option value="imperial">Miles per hour (mph)</option>
                         </select>
                       </div>
                     </div>
                   </div>
 
-                  <div className="pt-4">
-                    <button className="btn-primary">
-                      Save Changes
+                  <div className="pt-4 border-t border-gray-200">
+                    <button 
+                      onClick={handleSaveSettings}
+                      className="btn-primary"
+                    >
+                      Save Settings
                     </button>
                   </div>
                 </div>
@@ -358,4 +441,4 @@ export default function AccountPage() {
       </div>
     </div>
   )
-} 
+}

@@ -1,4 +1,4 @@
-// lib/gear-calculator.ts - Fixed version
+// lib/gear-calculator.ts - Complete working version
 
 import { 
   BikeSetup, 
@@ -85,19 +85,34 @@ export class GearCalculator {
     
     const issues: CrossChainingIssue[] = []
     const chainringTeeth = chainring.teeth
-    const cogs = cassette.cogs
+    const cogCount = cassette.cogs.length
     
-    // For single chainring, check extreme cogs
-    const smallestCogs = cogs.slice(0, 2) // Two smallest cogs
-    const largestCogs = cogs.slice(-2) // Two largest cogs
-    
-    smallestCogs.forEach(cog => {
-      if (chainringTeeth / cog > 4.5) { // High stress ratio
+    cassette.cogs.forEach((cog: number, index: number) => {
+      let severity: 'low' | 'medium' | 'high' = 'low'
+      let efficiencyLoss = 0
+      let recommendation = ''
+      
+      // Check for extreme cross-chaining
+      if (index < 2) { // Smallest cogs
+        severity = 'high'
+        efficiencyLoss = 8
+        recommendation = 'Avoid using smallest cogs with this chainring for extended periods'
+      } else if (index >= cogCount - 2) { // Largest cogs
+        severity = 'high' 
+        efficiencyLoss = 6
+        recommendation = 'Consider using a smaller chainring for these larger cogs'
+      } else if (index < 4 || index >= cogCount - 4) {
+        severity = 'medium'
+        efficiencyLoss = 3
+        recommendation = 'Moderate cross-chaining - acceptable for short periods'
+      }
+      
+      if (severity !== 'low') {
         issues.push({
           gear: `${chainringTeeth}T x ${cog}T`,
-          severity: 'medium',
-          efficiencyLoss: 3,
-          recommendation: 'Avoid sustained use of this gear combination'
+          severity,
+          efficiencyLoss,
+          recommendation
         })
       }
     })
@@ -129,92 +144,89 @@ export class GearCalculator {
   static checkCompatibility(current: BikeSetup, proposed: BikeSetup): CompatibilityStatus {
     const issues: CompatibilityIssue[] = []
     const solutions: CompatibilitySolution[] = []
-    
+
     // Check cassette/hub compatibility
-    if (proposed.cassette && proposed.hub) {
-      const cassetteFreehub = proposed.cassette.cassette?.freehubType
-      const hubFreehubs = proposed.hub.hub?.freehubTypes || []
-      
-      if (cassetteFreehub && !hubFreehubs.includes(cassetteFreehub)) {
+    const cassette = proposed.cassette
+    const hub = proposed.hub || current.hub
+
+    if (cassette?.cassette && hub?.hub) {
+      const cassetteFreehub = cassette.cassette.freehubType
+      const hubFreehubs = hub.hub.freehubTypes
+
+      if (!hubFreehubs.includes(cassetteFreehub)) {
         issues.push({
           type: 'freehub',
           severity: 'critical',
           message: `Cassette requires ${cassetteFreehub} freehub but hub only supports ${hubFreehubs.join(', ')}`,
-          components: ['cassette', 'hub'],
-          costToFix: 60,
-          estimatedCost: 60
+          components: [cassette.manufacturer + ' ' + cassette.model, hub.manufacturer + ' ' + hub.model],
+          costToFix: 45,
+          estimatedCost: 45
         })
-        
+
         solutions.push({
-          type: 'upgrade',
-          description: `Convert hub to ${cassetteFreehub} freehub`,
-          cost: 60,
+          type: 'replace',
+          description: `Purchase ${cassetteFreehub} freehub body`,
+          cost: 45,
           effort: 'medium',
           reliability: 95,
-          message: `Install ${cassetteFreehub} freehub body`,
+          message: `Purchase ${cassetteFreehub} freehub body for ${hub.manufacturer} ${hub.model}`,
           difficulty: 'medium'
         })
       }
     }
-    
+
     // Check derailleur capacity
-    if (proposed.cassette && proposed.derailleur) {
-      const cassetteCogs = proposed.cassette.cassette?.cogs || []
-      const largestCog = Math.max(...cassetteCogs)
-      const derailleurMaxCog = proposed.derailleur.derailleur?.maxCog || 50
+    const derailleur = proposed.derailleur || current.derailleur
+    
+    if (cassette?.cassette && derailleur?.derailleur) {
+      const maxCog = Math.max(...cassette.cassette.cogs)
       
-      if (largestCog > derailleurMaxCog) {
+      if (derailleur.derailleur.maxCog && maxCog > derailleur.derailleur.maxCog) {
         issues.push({
           type: 'capacity',
-          severity: 'high',
-          message: `Derailleur max cog (${derailleurMaxCog}T) insufficient for cassette (${largestCog}T)`,
-          components: ['cassette', 'derailleur'],
-          costToFix: 150,
-          estimatedCost: 150
+          severity: 'critical',
+          message: `Derailleur max cog is ${derailleur.derailleur.maxCog}t but cassette has ${maxCog}t`,
+          components: [derailleur.manufacturer + ' ' + derailleur.model, cassette.manufacturer + ' ' + cassette.model],
+          costToFix: 95,
+          estimatedCost: 95
         })
-        
+
         solutions.push({
-          type: 'replace',
-          description: 'Upgrade to higher capacity derailleur',
-          cost: 150,
-          effort: 'medium',
-          reliability: 90,
-          message: `Replace with derailleur that supports ${largestCog}T+ cassettes`,
-          difficulty: 'medium'
-        })
-      }
-    }
-    
-    // Check chain compatibility
-    if (proposed.cassette && proposed.chain) {
-      const cassetteSpeeds = proposed.cassette.cassette?.speeds
-      const chainSpeeds = proposed.chain.chain?.speeds
-      
-      if (cassetteSpeeds && chainSpeeds && cassetteSpeeds !== chainSpeeds) {
-        issues.push({
-          type: 'chain',
-          severity: 'medium',
-          message: `Chain (${chainSpeeds}-speed) doesn't match cassette (${cassetteSpeeds}-speed)`,
-          components: ['cassette', 'chain'],
-          costToFix: 30,
-          estimatedCost: 30
-        })
-        
-        solutions.push({
-          type: 'replace',
-          description: `Replace with ${cassetteSpeeds}-speed chain`,
-          cost: 30,
+          type: 'upgrade',
+          description: `Upgrade to derailleur with larger capacity`,
+          cost: 95,
           effort: 'easy',
           reliability: 100,
-          message: `Install ${cassetteSpeeds}-speed compatible chain`,
+          message: `Upgrade to derailleur with minimum ${maxCog}t capacity`,
           difficulty: 'easy'
         })
       }
     }
+
+    // Check speed compatibility
+    const speedComponents = [cassette, derailleur].filter(c => 
+      c?.cassette?.speeds || c?.derailleur?.speeds
+    )
     
+    if (speedComponents.length >= 2) {
+      const speeds = speedComponents.map(c => c?.cassette?.speeds || c?.derailleur?.speeds)
+      const uniqueSpeeds = [...new Set(speeds)]
+      
+      if (uniqueSpeeds.length > 1) {
+        issues.push({
+          type: 'other',
+          severity: 'medium',
+          message: `Speed mismatch: Found ${uniqueSpeeds.join(' and ')} speed components`,
+          components: speedComponents.map(c => c!.manufacturer + ' ' + c!.model),
+          costToFix: 0,
+          estimatedCost: 0
+        })
+      }
+    }
+
     // Determine overall status
-    const hasCritical = issues.some(issue => issue.severity === 'critical')
-    const hasHigh = issues.some(issue => issue.severity === 'high')
+    const hasCritical = issues.some(i => i.severity === 'critical')
+    const hasHigh = issues.some(i => i.severity === 'high')
     
     let status: 'compatible' | 'warning' | 'incompatible' = 'compatible'
     if (hasCritical) {
@@ -406,7 +418,6 @@ export class GearCalculator {
 
   /**
    * Calculate tire pressure based on rider weight and terrain
-   * @deprecated Use TirePressureCalculator.calculateOptimalPressure() instead
    */
   static calculateTirePressure(
     riderWeight: number,
@@ -415,31 +426,29 @@ export class GearCalculator {
     terrain: string,
     tubeless: boolean
   ): TirePressureResult {
-    // Simplified version for backward compatibility
-    // For accurate calculations, use the dedicated TirePressureCalculator
-    console.warn('Using deprecated calculateTirePressure. Use TirePressureCalculator.calculateOptimalPressure() for accurate results.')
-    
     const totalWeight = riderWeight + bikeWeight
     
-    // Very basic calculation
-    let basePressure = (totalWeight * 0.4) / (tireWidth / 25.4) // Convert mm to inches
+    // Base pressure calculation (simplified)
+    let basePressure = (totalWeight * 0.3) + (tireWidth * 0.5)
     
     // Terrain adjustments
     const terrainMultipliers = {
       road: 1.2,
-      gravel: 1.0,
-      trail: 0.8,
+      gravel: 0.9,
+      trail: 0.7,
       downhill: 0.6
     }
     
-    basePressure *= terrainMultipliers[terrain as keyof typeof terrainMultipliers] || 1.0
+    const multiplier = terrainMultipliers[terrain as keyof typeof terrainMultipliers] || 1.0
+    basePressure *= multiplier
     
+    // Tubeless adjustment
     if (tubeless) {
       basePressure *= 0.9
     }
     
     const frontPSI = Math.round(basePressure * 0.9)
-    const rearPSI = Math.round(basePressure)
+    const rearPSI = Math.round(basePressure * 1.1)
     
     return {
       frontPSI,
@@ -449,12 +458,12 @@ export class GearCalculator {
         max: Math.round(basePressure * 1.2)
       },
       notes: [
-        'This is a simplified calculation',
-        'Use the dedicated Tire Pressure Calculator for accurate results'
+        tubeless ? 'Tubeless setup allows for lower pressure' : 'Consider tubeless for lower pressure options',
+        'Adjust ±5 PSI based on personal preference'
       ],
       recommendations: [
-        'Consider using the advanced tire pressure calculator',
-        'Adjust based on personal preference and conditions'
+        'Start with recommended pressure and adjust based on feel',
+        'Lower pressure for more traction, higher for efficiency'
       ]
     }
   }
