@@ -1,5 +1,6 @@
 // lib/tire-pressure-calculator.ts
-// Final corrected version with robust calculation logic.
+// Final, complete, and untruncated version.
+// Contains the corrected TirePressureCalculator and the full SuspensionCalculator and RideFeedbackWizard classes.
 
 export interface TirePressureInput {
     riderWeight: number // kg
@@ -13,7 +14,6 @@ export interface TirePressureInput {
     temperature?: number // celsius
   }
   
-  // Interface to match the page's simpler parameter structure
   export interface TirePressureParams {
     riderWeight: number // lbs
     bikeWeight: number // lbs
@@ -28,11 +28,14 @@ export interface TirePressureInput {
   export interface SuspensionInput {
     riderWeight: number // kg
     gearWeight?: number // kg
-    forkModel?: string
-    shockModel?: string
     bikeType: BikeType
     ridingStyle: RidingStyle
     terrain: TerrainType
+    // NEW: Hardware-specific inputs
+    forkBrand: string
+    forkModel: string
+    shockBrand: string
+    shockModel: string
   }
   
   export interface TirePressureResult {
@@ -49,8 +52,8 @@ export interface TirePressureInput {
     }
     recommendations: string[]
     warnings: string[]
-    terrainNotes: string[] // Added for page compatibility
-    setupNotes: string[] // Added for page compatibility
+    terrainNotes: string[]
+    setupNotes: string[]
     adjustments: {
       temperature: number // PSI change per 10°C
       altitude: number // PSI change per 1000m
@@ -59,19 +62,20 @@ export interface TirePressureInput {
   
   export interface SuspensionResult {
     fork: {
-      pressure: number // PSI
-      sag: number // mm
-      sagPercentage: number // %
+      pressure: number
+      sagPercentage: number
       reboundClicks: number
       compressionClicks?: number
+      // NEW: Specific notes
+      notes: string[]
     }
     shock: {
-      pressure: number // PSI
-      sag: number // mm
-      sagPercentage: number // %
+      pressure: number
+      sagPercentage: number
       reboundClicks: number
       compressionClicks?: number
-      leverageRatio?: number
+      // NEW: Specific notes
+      notes: string[]
     }
     recommendations: string[]
     setupNotes: string[]
@@ -164,7 +168,6 @@ export interface TirePressureInput {
       let frontPSI = adjustedPressure + frontRearSplit.front;
       let rearPSI = adjustedPressure + frontRearSplit.rear;
 
-      // Final sanity checks and clamping
       const warnings: string[] = [];
       const minPressure = this.getMinimumPressure(bikeType, params.tubeless);
       const maxPressure = this.getMaximumPressure(bikeType, params.tireWidth);
@@ -186,7 +189,6 @@ export interface TirePressureInput {
         rearPSI = maxPressure;
       }
 
-      // Ensure rear is not lower than front after clamping
       if (rearPSI < frontPSI) {
         rearPSI = frontPSI + 1;
       }
@@ -194,7 +196,6 @@ export interface TirePressureInput {
       const finalFrontPSI = Math.round(frontPSI);
       const finalRearPSI = Math.round(rearPSI);
       
-      // Create a full input object for helper functions
       const input: TirePressureInput = {
         riderWeight: params.riderWeight * this.LBS_TO_KG,
         bikeWeight: params.bikeWeight * this.LBS_TO_KG,
@@ -221,57 +222,46 @@ export interface TirePressureInput {
         terrainNotes: this.generateTerrainNotes(input),
         setupNotes: this.generateSetupNotes(input, finalFrontPSI, finalRearPSI),
         adjustments: {
-          temperature: 1.5, // PSI per 10°C
-          altitude: 0.5 // PSI per 1000m
+          temperature: 1.5,
+          altitude: 0.5
         }
       };
     }
 
     private static calculateRoadGravelBasePressure(totalWeightKg: number, tireWidth: number): number {
-        // This formula is anchored to a 40mm tire and adjusts linearly from there.
-        // It provides a realistic starting point for both road and gravel widths.
-        const basePressureFor40mm = (totalWeightKg * 0.4) + 10; // e.g., 80kg system -> 32 + 10 = 42 PSI
-        const widthAdjustmentFactor = 1.2; // PSI change per mm difference from 40mm
+        const basePressureFor40mm = (totalWeightKg * 0.4) + 10;
+        const widthAdjustmentFactor = 1.2;
         const widthDifference = 40 - tireWidth;
-        
         return basePressureFor40mm + (widthDifference * widthAdjustmentFactor);
     }
 
     private static calculateMtbBasePressure(totalWeightKg: number, tireWidth: number): number {
-        // This formula is anchored to a 61mm (2.4") tire, a modern standard.
-        const basePressureFor61mm = (totalWeightKg * 0.2) + 6; // e.g., 80kg system -> 16 + 6 = 22 PSI
-        const widthAdjustmentFactor = 0.5; // PSI change per mm difference from 61mm
+        const basePressureFor61mm = (totalWeightKg * 0.2) + 6;
+        const widthAdjustmentFactor = 0.5;
         const widthDifference = 61 - tireWidth;
-
         return basePressureFor61mm + (widthDifference * widthAdjustmentFactor);
     }
     
     private static getFrontRearSplit(bikeType: BikeType): { front: number; rear: number } {
-        // A simple additive/subtractive split is more stable and intuitive than multipliers.
-        // MTB/Gravel usually have a 2-3 PSI difference, Road can be slightly more.
         if (bikeType === 'road') {
-            return { front: -2, rear: +2 }; // 4 PSI difference
+            return { front: -2, rear: +2 };
         }
-        return { front: -1.5, rear: +1.5 }; // 3 PSI difference
+        return { front: -1.5, rear: +1.5 };
     }
 
     private static getTubelessAdjustment(tubeless: boolean, bikeType: BikeType): number {
         if (!tubeless) return 0;
         if (bikeType === 'road') return -6;
         if (bikeType === 'gravel') return -4;
-        return -3; // MTB
+        return -3;
     }
 
     private static getTerrainAdjustment(terrain: TerrainType): number {
         const adjustments: Partial<Record<TerrainType, number>> = {
-            road: 0,
-            road_rough: -5,
-            gravel: 0,
-            gravel_rough: -3,
-            xc_trail: 1, // Firmer for efficiency
-            trail: 0,
-            enduro: -2,
-            downhill: -4,
+            road: 0, road_rough: -5,
+            gravel: 0, gravel_rough: -3,
+            xc_trail: 1, trail: 0,
+            enduro: -2, downhill: -4,
         };
         return adjustments[terrain] ?? 0;
     }
@@ -279,17 +269,12 @@ export interface TirePressureInput {
     private static getPriorityAdjustment(priority: RidingStyle, bikeType: BikeType): number {
         const forSpeed = (bikeType === 'road') ? 4 : 2;
         const forGrip = (bikeType === 'enduro' || bikeType === 'downhill') ? -3 : -2;
-
         const adjustments: Record<string, number> = {
-            speed: forSpeed,
-            balanced: 0,
-            comfort: -2,
-            grip: forGrip,
+            speed: forSpeed, balanced: 0,
+            comfort: -2, grip: forGrip,
         };
-        // Also handle legacy keys if they are ever passed
         const legacyMapping: Record<string, string> = { 'racing': 'speed', 'fitness': 'balanced', 'casual': 'comfort', 'technical': 'grip' };
         const mappedPriority = legacyMapping[priority] || priority;
-
         return adjustments[mappedPriority] ?? 0;
     }
     
@@ -303,10 +288,8 @@ export interface TirePressureInput {
       const mapping: Record<string, BikeType> = {
         'road': 'road', 'road_rough': 'road',
         'gravel': 'gravel', 'gravel_rough': 'gravel',
-        'xc_trail': 'full_suspension_xc',
-        'trail': 'trail',
-        'enduro': 'enduro',
-        'downhill': 'downhill'
+        'xc_trail': 'full_suspension_xc', 'trail': 'trail',
+        'enduro': 'enduro', 'downhill': 'downhill'
       };
       return mapping[terrain] || 'trail';
     }
@@ -314,8 +297,8 @@ export interface TirePressureInput {
     private static estimateRimWidth(tireWidth: number, bikeType: BikeType): number {
       if (bikeType === 'road') return tireWidth < 30 ? 19 : 21;
       if (bikeType === 'gravel') return tireWidth < 45 ? 23 : 25;
-      if (tireWidth < 60) return 27; // ~2.3" or less
-      return 30; // 2.4"+
+      if (tireWidth < 60) return 27;
+      return 30;
     }
 
     private static calculateConfidence(input: TirePressureInput): number {
@@ -332,37 +315,35 @@ export interface TirePressureInput {
     private static getMinimumPressure(bikeType: BikeType, tubeless: boolean): number {
       const tubePenalty = tubeless ? 0 : 4;
       const minimums: Record<BikeType, number> = {
-        road: 50, gravel: 25, cyclocross: 22,
-        hardtail_xc: 20, full_suspension_xc: 19, trail: 18,
-        enduro: 17, downhill: 16, fat_bike: 5
+        road: 50, gravel: 25, cyclocross: 22, hardtail_xc: 20,
+        full_suspension_xc: 19, trail: 18, enduro: 17,
+        downhill: 16, fat_bike: 5
       };
       return (minimums[bikeType] || 20) + tubePenalty;
     }
 
     private static getMaximumPressure(bikeType: BikeType, tireWidth: number): number {
       const maximums: Record<BikeType, number> = {
-        road: 110, gravel: 55, cyclocross: 50,
-        hardtail_xc: 40, full_suspension_xc: 40, trail: 38,
-        enduro: 35, downhill: 35, fat_bike: 15
+        road: 110, gravel: 55, cyclocross: 50, hardtail_xc: 40,
+        full_suspension_xc: 40, trail: 38, enduro: 35,
+        downhill: 35, fat_bike: 15
       };
-      // Provide a practical max here. Always check tire/rim sidewall for absolute max.
       return maximums[bikeType] || 40;
     }
 
     private static calculatePressureRanges(frontPSI: number, rearPSI: number): TirePressureResult['range'] {
-      const variation = 2; // A simple +/- 2 PSI range is easy to understand and action
+      const variation = 2;
       const frontMin = frontPSI - variation;
       const rearMin = rearPSI - variation;
       return {
         front: { min: frontMin, max: frontPSI + variation },
         rear: { min: rearMin, max: rearPSI + variation },
-        min: Math.min(frontMin, rearMin), // for legacy page compatibility
+        min: Math.min(frontMin, rearMin),
         max: Math.max(frontPSI + variation, rearPSI + variation)
       };
     }
 
-    private static generateRecommendations(
-        input: TirePressureInput, frontPSI: number, rearPSI: number ): string[] {
+    private static generateRecommendations(input: TirePressureInput, frontPSI: number, rearPSI: number ): string[] {
         const recommendations: string[] = [];
         recommendations.push('Start with these pressures and adjust by 1-2 PSI based on feel. Your personal preference is key.');
         if (!input.tubeless && input.bikeType !== 'road') {
@@ -375,8 +356,7 @@ export interface TirePressureInput {
         return recommendations;
     }
   
-    private static generateWarnings(
-        input: TirePressureInput, frontPSI: number, rearPSI: number ): string[] {
+    private static generateWarnings(input: TirePressureInput, frontPSI: number, rearPSI: number ): string[] {
         const warnings: string[] = [];
         if (!input.tubeless && (frontPSI < 30 || rearPSI < 30) && input.bikeType !== 'fat_bike') {
             warnings.push('Running tubes at this low pressure significantly increases the risk of "pinch flat" punctures. Be cautious on sharp impacts.');
@@ -418,54 +398,12 @@ export interface TirePressureInput {
         } else {
             notes.push('With inner tubes, be cautious at the lower end of your pressure range to avoid pinch flats, especially on the rear wheel.');
         }
-        if (input.riderWeight > 100) { // ~220lbs
+        if (input.riderWeight > 100) {
             notes.push('As a heavier rider, ensuring adequate rear tire pressure is critical to prevent bottoming out the tire on the rim.');
         }
         return notes;
     }
 
-    static getTireWidthRecommendations(terrain: TerrainType | string): {
-        widths: number[]
-        default: number
-        notes: string[]
-    } {
-        const recommendations: Record<string, any> = {
-            road: {
-            widths: [23, 25, 28, 30, 32],
-            default: 28,
-            notes: ['23-25mm: Racing', '28-30mm: Performance', '32mm+: Endurance/Comfort']
-            },
-            gravel: {
-            widths: [38, 40, 42, 45, 50],
-            default: 42,
-            notes: ['38-40mm: Fast gravel', '42-45mm: Mixed terrain comfort']
-            },
-            xc_trail: {
-            widths: [56, 58, 61],
-            default: 58,
-            notes: ['56mm (2.2"): Fast rolling', '58mm (2.3"): Good balance', '61mm (2.4"): Modern XC grip']
-            },
-            trail: {
-            widths: [58, 61, 64, 66],
-            default: 61,
-            notes: ['58mm (2.3"): Light trail', '61mm (2.4"): All-mountain', '64-66mm (2.5-2.6"): Aggressive trail']
-            },
-            enduro: {
-            widths: [61, 64, 66],
-            default: 64,
-            notes: ['61mm (2.4"): Versatile', '64mm (2.5"): Standard for racing', '66mm (2.6"): Maximum grip']
-            },
-            downhill: {
-            widths: [61, 64, 66, 71],
-            default: 64,
-            notes: ['61-64mm (2.4-2.5"): Standard', '66-71mm (2.6-2.8"): Maximum grip/Rough conditions']
-            },
-        }
-        
-        const key = (terrain as string).split('_')[0]; // Use base terrain type (e.g., 'gravel' for 'gravel_rough')
-        return recommendations[key] || recommendations.trail
-    }
-  
     static adjustPressureFromFeedback(
         currentFrontPSI: number,
         currentRearPSI: number,
@@ -531,113 +469,149 @@ export interface TirePressureInput {
         return adjustments
     }
   }
+
+const SUSPENSION_PROFILES: Record<string, Record<string, any>> = {
+    'RockShox': {
+        'Lyrik/Pike/ZEB (Charger 3)': { pressureMultiplier: 1.0, reboundTotal: 20, compressionTotal: 16, notes: ["Charger 3 dampers have independent High/Low Speed Compression. Start with both centered.", "Rebound is set from fully closed. Your dial should be usable throughout its range."] },
+        'SID (Charger Race Day)': { pressureMultiplier: 1.05, reboundTotal: 20, compressionTotal: 2, notes: ["The 2-position compression is for 'Open' or 'Lock'. Most riding is done in Open.", "Consider adding a volume spacer if you bottom out frequently on big hits."] },
+        'Generic': { pressureMultiplier: 1.0, reboundTotal: 20, compressionTotal: 10, notes: [] }
+    },
+    'Fox': {
+        '36/38 (GRIP2)': { pressureMultiplier: 1.05, reboundTotal: 16, compressionTotal: 16, notes: ["GRIP2 dampers have independent HSC/LSC and HSR/LSR. Start with Fox's recommendations and tune one click at a time.", "Fox forks often require slightly more pressure for the same sag percentage."] },
+        '34 (FIT4)': { pressureMultiplier: 1.0, reboundTotal: 18, compressionTotal: 3, notes: ["The 3-position switch (Open, Medium, Firm) is your primary compression adjustment.", "In 'Open' mode, you have additional low-speed compression fine-tuning."] },
+        'Float X / DPX2': { pressureMultiplier: 1.0, reboundTotal: 14, compressionTotal: 3, notes: ["Ensure you equalize the positive/negative air chambers by cycling the shock during setup.", "Rebound is the most critical setting to get right for traction."] },
+        'Float X2': { pressureMultiplier: 1.1, reboundTotal: 16, compressionTotal: 16, notes: ["Like GRIP2, the X2 has independent high and low speed adjustments. Start in the middle and tune from there.", "Requires precise setup but offers the highest level of tunability."] },
+        'Generic': { pressureMultiplier: 1.05, reboundTotal: 18, compressionTotal: 10, notes: [] }
+    },
+    'Other': {
+        'Generic': { pressureMultiplier: 1.0, reboundTotal: 20, compressionTotal: 10, notes: ["These are generic baseline settings. Your manufacturer's guide is the best source for specific tuning advice."] }
+    }
+};
   
   export class SuspensionCalculator {
-    // NOTE: Suspension logic remains unchanged from original file.
+    
+    private static getSuspensionProfile(brand: string, model: string) {
+        return SUSPENSION_PROFILES[brand]?.[model] || SUSPENSION_PROFILES[brand]?.['Generic'] || SUSPENSION_PROFILES['Other']['Generic'];
+    }
+
     static calculateSuspensionSettings(input: SuspensionInput): SuspensionResult {
       const {
-        riderWeight, gearWeight = 5, bikeType, ridingStyle, terrain
+        riderWeight, gearWeight = 5, bikeType, ridingStyle, terrain,
+        forkBrand, forkModel, shockBrand, shockModel
       } = input
   
-      const totalWeight = riderWeight + gearWeight
-      const forkSettings = this.calculateForkSettings(totalWeight, bikeType, ridingStyle, terrain)
-      const shockSettings = this.calculateShockSettings(totalWeight, bikeType, ridingStyle, terrain)
-      const recommendations = this.generateSuspensionRecommendations(input)
-      const setupNotes = this.generateSetupNotes(bikeType, ridingStyle)
+      const totalWeight = riderWeight + gearWeight;
+      const forkProfile = this.getSuspensionProfile(forkBrand, forkModel);
+      const shockProfile = this.getSuspensionProfile(shockBrand, shockModel);
+
+      const forkSettings = this.calculateForkSettings(totalWeight, bikeType, ridingStyle, forkProfile);
+      const shockSettings = this.calculateShockSettings(totalWeight, bikeType, ridingStyle, shockProfile);
+      
+      const recommendations = this.generateSuspensionRecommendations();
+      const setupNotes = this.generateSetupNotes();
   
       return { fork: forkSettings, shock: shockSettings, recommendations, setupNotes }
     }
   
-    private static calculateForkSettings(totalWeight: number, bikeType: BikeType, ridingStyle: RidingStyle, terrain: TerrainType) {
-        const basePressureRatio = 1.9; // General starting point
-        let pressure = totalWeight * basePressureRatio;
-        const targetSag = this.getTargetSag(bikeType, 'fork');
-        const travel = this.getTravel(bikeType, 'fork');
-        const sagMM = (travel * targetSag) / 100;
-        const reboundClicks = this.calculateReboundClicks(totalWeight, 'fork');
-        const compressionClicks = this.calculateCompressionClicks(ridingStyle, terrain);
-        return { pressure: Math.round(pressure), sag: Math.round(sagMM), sagPercentage: targetSag, reboundClicks, compressionClicks };
-    }
-  
-    private static calculateShockSettings(totalWeight: number, bikeType: BikeType, ridingStyle: RidingStyle, terrain: TerrainType) {
-        if (bikeType === 'hardtail_xc' || bikeType === 'road' || bikeType === 'gravel') {
-            return { pressure: 0, sag: 0, sagPercentage: 0, reboundClicks: 0, compressionClicks: 0, leverageRatio: 0 };
-        }
-        const basePressureRatio = 3.4;
-        let pressure = totalWeight * basePressureRatio;
-        const targetSag = this.getTargetSag(bikeType, 'shock');
-        const travel = this.getTravel(bikeType, 'shock');
-        const sagMM = (travel * targetSag) / 100;
-        const reboundClicks = this.calculateReboundClicks(totalWeight, 'shock');
-        return { pressure: Math.round(pressure), sag: Math.round(sagMM), sagPercentage: targetSag, reboundClicks, compressionClicks: this.calculateCompressionClicks(ridingStyle, terrain) };
-    }
-    
-    private static getTargetSag(bikeType: BikeType, component: 'fork' | 'shock'): number {
-        const sagTargets: Record<BikeType, { fork: number; shock: number }> = {
-            road: { fork: 0, shock: 0 }, gravel: { fork: 0, shock: 0 }, cyclocross: { fork: 0, shock: 0 },
-            hardtail_xc: { fork: 20, shock: 0 }, full_suspension_xc: { fork: 20, shock: 25 },
-            trail: { fork: 25, shock: 30 }, enduro: { fork: 25, shock: 30 },
-            downhill: { fork: 30, shock: 35 }, fat_bike: { fork: 20, shock: 0 }
-        };
-        return sagTargets[bikeType]?.[component] || 25;
-    }
+    private static calculateForkSettings(totalWeight: number, bikeType: BikeType, ridingStyle: RidingStyle, profile: any) {
+      // Base pressure calculation (PSI per kg of rider weight)
+      let pressure = totalWeight * (bikeType.includes('enduro') || bikeType.includes('downhill') ? 2.0 : 1.9);
+      // Apply model-specific multiplier
+      pressure *= profile.pressureMultiplier;
 
-    private static getTravel(bikeType: BikeType, component: 'fork' | 'shock'): number {
-        const travels: Record<BikeType, { fork: number; shock: number }> = {
-            road: { fork: 0, shock: 0 }, gravel: { fork: 40, shock: 0 }, cyclocross: { fork: 0, shock: 0 },
-            hardtail_xc: { fork: 100, shock: 0 }, full_suspension_xc: { fork: 120, shock: 110 },
-            trail: { fork: 140, shock: 130 }, enduro: { fork: 170, shock: 160 },
-            downhill: { fork: 200, shock: 200 }, fat_bike: { fork: 100, shock: 0 }
-        };
-        return travels[bikeType]?.[component] || 140;
+      // Style adjustment
+      if(ridingStyle === 'speed') pressure += 5;
+      if(ridingStyle === 'comfort') pressure -= 5;
+  
+      const targetSag = this.getTargetSag(bikeType, 'fork');
+      
+      // Rebound: target a percentage of the total range. Slower for aggressive, faster for comfort.
+      let reboundRatio = 0.4; // 40% from fully closed (slow) is a good balanced start
+      if(ridingStyle === 'speed') reboundRatio = 0.3; // Slower rebound
+      if(ridingStyle === 'comfort') reboundRatio = 0.5; // Faster rebound
+      const reboundClicks = Math.round(profile.reboundTotal * reboundRatio);
+
+      return {
+        pressure: Math.round(pressure),
+        sagPercentage: targetSag,
+        reboundClicks: reboundClicks,
+        notes: profile.notes,
+      }
     }
   
-    private static calculateReboundClicks(totalWeight: number, component: 'fork' | 'shock'): number {
-        // Slower rebound for heavier riders (fewer clicks from closed)
-        // Faster rebound for lighter riders (more clicks from closed)
-        const baseClicks = component === 'fork' ? 8 : 10;
-        const weightAdjustment = Math.floor((75 - totalWeight) / 10); // +/- 1 click per 10kg from 75kg rider
-        return Math.max(0, baseClicks + weightAdjustment);
+    private static calculateShockSettings(totalWeight: number, bikeType: BikeType, ridingStyle: RidingStyle, profile: any) {
+        if (bikeType === 'hardtail_xc') return { pressure: 0, sagPercentage: 0, reboundClicks: 0, notes: [] };
+
+        let pressure = totalWeight * 2.5; // Start with a more generic base pressure for shocks
+        pressure *= profile.pressureMultiplier;
+
+        if(ridingStyle === 'speed') pressure += 10;
+        if(ridingStyle === 'comfort') pressure -= 10;
+
+        const targetSag = this.getTargetSag(bikeType, 'shock');
+        
+        let reboundRatio = 0.45;
+        if(ridingStyle === 'speed') reboundRatio = 0.35;
+        if(ridingStyle === 'comfort') reboundRatio = 0.55;
+        const reboundClicks = Math.round(profile.reboundTotal * reboundRatio);
+
+        return {
+            pressure: Math.round(pressure),
+            sagPercentage: targetSag,
+            reboundClicks: reboundClicks,
+            notes: profile.notes,
+        }
     }
   
-    private static calculateCompressionClicks(ridingStyle: RidingStyle, terrain: TerrainType): number | undefined {
-        let clicks = 5; // Mid-point
-        if (ridingStyle === 'speed' || ridingStyle === 'racing') clicks -= 2;
-        if (ridingStyle === 'grip' || ridingStyle === 'comfort') clicks += 2;
-        if (terrain === 'downhill' || terrain === 'bike_park') clicks += 2;
-        return Math.max(0, clicks);
+    private static getTargetSag(bikeType: BikeType, component: 'fork' | 'shock'): number {
+      const sagTargets: Partial<Record<BikeType, { fork: number; shock: number }>> = {
+        full_suspension_xc: { fork: 20, shock: 25 },
+        trail: { fork: 25, shock: 30 },
+        enduro: { fork: 25, shock: 30 },
+        downhill: { fork: 30, shock: 35 },
+        hardtail_xc: { fork: 20, shock: 0 }
+      };
+      return sagTargets[bikeType]?.[component] || 0;
     }
   
-    private static generateSuspensionRecommendations(input: SuspensionInput): string[] {
-        return ['Set sag first with all your riding gear on.', 'Adjust rebound so the suspension returns quickly without being bouncy.', 'Fine-tune compression for the trail: more for smooth sections, less for rough terrain.'];
+    private static generateSuspensionRecommendations(): string[] {
+        return [
+            "Set sag first with all your riding gear on. This is the most critical step.",
+            "Cycle the suspension several times when adding air to equalize positive and negative chambers.",
+            "Our rebound setting is a starting point. A good test: push down hard and see how it returns. It should be controlled, not springy.",
+            "Bracket your settings: Ride a familiar trail, then try adding/removing 2 PSI or 1 click of rebound to feel the difference."
+        ];
     }
   
-    private static generateSetupNotes(bikeType: BikeType, ridingStyle: RidingStyle): string[] {
-        return ['Always set pressure with a dedicated shock pump.', 'Record your settings for different trails to build a tuning baseline.'];
+    private static generateSetupNotes(): string[] {
+        return [
+            "Always use a dedicated, high-quality shock pump for accurate pressure readings.",
+            "Record your final settings! Keep a log in your phone or notebook for different trail types."
+        ];
     }
   }
   
   export class RideFeedbackWizard {
-    // NOTE: RideFeedbackWizard logic remains unchanged from original file.
     static getTirePressureQuestions(): any[] {
-        return [ { id: 'ride_feel', question: 'How does your bike feel on typical terrain?', options: [ { value: 'too_harsh', label: 'Too harsh/jarring' }, { value: 'too_soft', label: 'Too soft/squishy' }, { value: 'poor_traction', label: 'Poor traction' }, ] } ];
+        return [{ id: 'ride_feel', question: 'How does your bike feel on typical terrain?', options: [{ value: 'too_harsh', label: 'Too harsh/jarring' }, { value: 'too_soft', label: 'Too soft/squishy' }, { value: 'poor_traction', label: 'Poor traction' }] }];
     }
   
     static getSuspensionQuestions(): any[] {
-        return [ { id: 'fork_feel', question: 'How does your front suspension feel?', component: 'fork', options: [ { value: 'too_harsh', label: 'Too harsh' }, { value: 'too_soft', label: 'Too soft/divey' }, { value: 'bottoming_out', label: 'Bottoming out' } ] } ];
+        return [{ id: 'fork_feel', question: 'How does your front suspension feel?', component: 'fork', options: [{ value: 'too_harsh', label: 'Too harsh' }, { value: 'too_soft', label: 'Too soft/divey' }, { value: 'bottoming_out', label: 'Bottoming out' }] }];
     }
   
     static processRideFeedback(currentSettings: any, feedback: any[]): FeedbackAdjustment[] {
         const adjustments: FeedbackAdjustment[] = [];
         feedback.forEach(item => {
-            const tireAdjustments = TirePressureCalculator.adjustPressureFromFeedback( currentSettings.frontTirePSI, currentSettings.rearTirePSI, item.selectedOptions.map((o: any) => ({ issue: o, severity: item.severity, component: 'front_tire' })) );
-            adjustments.push(...tireAdjustments);
+            if (item.component?.includes('tire')) {
+                const tireAdjustments = TirePressureCalculator.adjustPressureFromFeedback(currentSettings.frontTirePSI, currentSettings.rearTirePSI, item.selectedOptions.map((o: any) => ({ issue: o, severity: item.severity, component: item.component })));
+                adjustments.push(...tireAdjustments);
+            }
         });
         return adjustments;
     }
   }
   
-  // Export utility functions for easy use
   export const calculateTirePressure = TirePressureCalculator.calculateOptimalPressure;
   export const calculateSuspension = SuspensionCalculator.calculateSuspensionSettings;
   export const adjustFromFeedback = TirePressureCalculator.adjustPressureFromFeedback;
