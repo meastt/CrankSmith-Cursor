@@ -1,4 +1,4 @@
-// types/gear-calculator.ts - FIXED VERSION with all missing properties
+// types/gear-calculator.ts - CORRECTED AND EXPANDED
 
 export interface GearRatio {
   chainring: number;
@@ -12,9 +12,11 @@ export interface GearComparison {
   results: ComparisonResults;
 }
 
+// MODIFIED: Added crankset property for correct data modeling
 export interface BikeSetup {
   cassette?: Component;
   chainring?: Component;
+  crankset?: Component; // Correctly added
   chain?: Component;
   wheel?: Component;
   tire?: Component;
@@ -22,11 +24,14 @@ export interface BikeSetup {
   hub?: Component;
 }
 
+// MODIFIED: Added chainLength and chainline for integrated results
 export interface ComparisonResults {
   performance: PerformanceMetrics;
   weight: WeightComparison;
   compatibility: CompatibilityStatus;
   cost: CostAnalysis;
+  chainLength?: ChainLengthResult; // Integrated result
+  chainline?: ChainlineResult;   // Integrated result
 }
 
 export interface PerformanceMetrics {
@@ -87,7 +92,6 @@ export interface WeightComparison {
   costPerGram?: number; // $/gram saved
 }
 
-// FIXED: CompatibilityStatus interface with all missing properties
 export interface CompatibilityStatus {
   status: 'compatible' | 'warning' | 'incompatible';
   issues: CompatibilityIssue[];
@@ -97,17 +101,15 @@ export interface CompatibilityStatus {
   overallStatus: 'compatible' | 'warning' | 'incompatible';
 }
 
-// FIXED: CompatibilityIssue interface with ALL missing properties
 export interface CompatibilityIssue {
-  type: 'freehub' | 'chain' | 'capacity' | 'chainline' | 'clearance' | 'other';
+  type: 'freehub' | 'chain' | 'capacity' | 'chainline' | 'clearance' | 'bcd' | 'other';
   severity: 'low' | 'medium' | 'high' | 'critical';
   message: string;
   components: string[];
   costToFix?: number;
-  estimatedCost: number; // ADDED: This was missing and breaking the compatibility page
+  estimatedCost: number;
 }
 
-// FIXED: CompatibilitySolution interface with ALL missing properties
 export interface CompatibilitySolution {
   type: 'replace' | 'upgrade' | 'adapter' | 'modification';
   description: string;
@@ -115,8 +117,8 @@ export interface CompatibilitySolution {
   effort: 'easy' | 'medium' | 'hard';
   reliability: number; // 0-100
   components: string[];
-  message: string; // ADDED: This was missing and breaking the compatibility page
-  difficulty: 'easy' | 'medium' | 'hard'; // ADDED: This was missing and breaking the compatibility page
+  message: string;
+  difficulty: 'easy' | 'medium' | 'hard';
 }
 
 export interface CostAnalysis {
@@ -145,7 +147,6 @@ export interface Component {
   category: ComponentCategory;
   imageUrl?: string;
   
-  // Specific component data
   cassette?: CassetteData;
   chainring?: ChainringData;
   chain?: ChainData;
@@ -153,18 +154,18 @@ export interface Component {
   tire?: TireData;
   derailleur?: DerailleurData;
   hub?: HubData;
-  crankset?: CranksetData; // ADDED: This was missing from the interface
+  crankset?: CranksetData;
 }
 
 export type ComponentCategory = 
   | 'CASSETTE'
   | 'CHAINRING'
+  | 'CRANKSET'
   | 'CHAIN'
   | 'WHEEL'
   | 'TIRE'
   | 'DERAILLEUR'
   | 'HUB'
-  | 'CRANKSET' // ADDED: This was missing from the type
   | 'CRANK'
   | 'BOTTOM_BRACKET'
   | 'SHIFTER'
@@ -177,122 +178,82 @@ export interface CassetteData {
   speeds: number;
   cogs: number[];
   freehubType: FreehubType;
-  spacing?: number;
-  material?: string;
-  maxTorque?: number;
 }
 
 export interface ChainringData {
   teeth: number;
   bcd?: number;
   offset?: number;
-  material?: string;
+}
+
+export interface CranksetData {
+  chainrings: number[];
+  bcd?: number;
+  spindleType?: string;
+  offset?: number;
 }
 
 export interface ChainData {
   speeds: number;
-  material?: string;
   links?: number;
 }
 
 export interface WheelData {
-  diameter: number; // inches
-  width?: number; // mm
-  material?: string;
-  spokeCount?: number;
+  diameter: number;
+  width?: number;
 }
 
 export interface TireData {
-  width: number; // inches
-  diameter: number; // inches
-  compound?: string;
-  casing?: string;
-  tpi?: number;
+  width: number;
+  diameter: number;
 }
 
-// FIXED: DerailleurData interface with ALL missing properties
 export interface DerailleurData {
   speeds: number;
-  maxCapacity?: number;
   maxCog?: number;
   capacity?: number;
-  cageLength?: 'SHORT' | 'MEDIUM' | 'LONG';
-}
-
-// ADDED: Missing CranksetData interface
-export interface CranksetData {
-  chainrings: number[];
-  bcd?: number;
-  spindleType?: 'HOLLOWTECH_II' | 'DUB' | 'BB30' | 'PF30' | 'BSA' | 'T47';
-  material?: string;
 }
 
 export interface HubData {
-  frontSpacing?: number;
-  rearSpacing?: number;
   freehubTypes: FreehubType[];
-  axleType?: AxleType;
-  bearingType?: string;
 }
 
 export type FreehubType = 
   | 'SHIMANO_HG'
   | 'SRAM_XD'
-  | 'SRAM_XDR'
-  | 'CAMPAGNOLO_N3W'
-  | 'MICRO_SPLINE'
-  | 'DTSWISS_350'
-  | 'DTSWISS_240';
+  | 'MICRO_SPLINE';
 
 export type AxleType = 
-  | 'QR_FRONT'
-  | 'QR_REAR'
-  | 'THRU_AXLE_12_FRONT'
-  | 'THRU_AXLE_12_REAR'
-  | 'THRU_AXLE_15_FRONT'
-  | 'THRU_AXLE_15_REAR'
-  | 'BOOST_FRONT'
-  | 'BOOST_REAR';
+  | 'BOOST_REAR'
+  | 'SUPERBOOST_REAR';
 
-// Calculator input parameters
 export interface CalculatorParams {
-  riderWeight: number; // lbs
-  bikeWeight: number; // lbs
-  cadence: number; // rpm
-  wheelDiameter: number; // inches
-  tireWidth: number; // inches
-  terrain: 'road' | 'gravel' | 'trail' | 'downhill';
-  tubeless: boolean;
+  riderWeight?: number;
+  bikeWeight?: number;
+  cadence?: number;
+  wheelDiameter?: number;
+  chainstayLength?: number;
 }
 
-// Tire pressure calculation result
 export interface TirePressureResult {
   frontPSI: number;
   rearPSI: number;
-  range: {
-    min: number;
-    max: number;
-  };
+  range: { min: number; max: number };
   notes: string[];
   recommendations: string[];
 }
 
-// Chain length calculation result
 export interface ChainLengthResult {
   links: number;
-  length: number; // mm
-  tolerance: {
-    min: number;
-    max: number;
-  };
+  length: number;
+  tolerance: { min: number; max: number };
   notes: string[];
 }
 
-// Chainline analysis result
 export interface ChainlineResult {
-  optimalChainline: number; // mm
-  currentChainline: number; // mm
-  deviation: number; // mm
-  efficiency: number; // percentage
+  optimalChainline: number;
+  currentChainline: number;
+  deviation: number;
+  efficiency: number;
   recommendations: string[];
 }
